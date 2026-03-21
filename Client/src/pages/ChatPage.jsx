@@ -68,18 +68,28 @@ export default function ChatPage() {
   
   const menuRef = useRef(null);
   const fileRef = useRef(null);
+  const messagesEndRef = useRef(null);
 
   useEffect(() => {
     getUsers();
   }, [getUsers]);
 
   useEffect(() => {
+    subscribeToMessages();
+    return () => unsubscribeFromMessages();
+  }, [subscribeToMessages, unsubscribeFromMessages]);
+
+  useEffect(() => {
     if (selectedUser) {
       getMessages(selectedUser._id);
-      subscribeToMessages();
     }
-    return () => unsubscribeFromMessages();
-  }, [selectedUser, getMessages, subscribeToMessages, unsubscribeFromMessages]);
+  }, [selectedUser, getMessages]);
+
+  useEffect(() => {
+    if (messagesEndRef.current && messages) {
+      messagesEndRef.current.scrollIntoView({ behavior: "smooth" });
+    }
+  }, [messages]);
 
   useEffect(() => {
     const handleOutsideClick = (e) => {
@@ -274,6 +284,11 @@ export default function ChatPage() {
                 <span className="contact-name">{c.name}</span>
                 <span className={`contact-status ${getStatus(c._id) === "Online" ? "status-online" : ""}`}>{getStatus(c._id)}</span>
               </div>
+              {c.unreadCount > 0 && (
+                <div className="unread-badge">
+                  {c.unreadCount}
+                </div>
+              )}
             </button>
           ))}
         </div>
@@ -317,6 +332,7 @@ export default function ChatPage() {
                   <ChatMessage key={m._id} message={m} selectedUser={selectedUser} />
                 ))
               )}
+              <div ref={messagesEndRef} />
             </div>
 
             <div className="chat-input-wrap">

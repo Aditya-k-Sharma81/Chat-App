@@ -25,7 +25,8 @@ export const useChatStore = create((set, get) => ({
           initials: u.name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2),
           color: ["#7c6cfb", "#c084fc", "#38bdf8", "#fb923c", "#34d399"][Math.floor(Math.random() * 5)],
           bio: u.bio,
-          pic: u.pic
+          pic: u.pic,
+          unreadCount: u.unreadCount || 0
         }));
         set({ users: formattedUsers });
       }
@@ -70,22 +71,62 @@ export const useChatStore = create((set, get) => ({
       console.log("Error in sendMessage:", error);
     }
   },
+  
+  markAsSeen: async (userId) => {
+    try {
+      await fetch(`${BASE_URL}/api/messages/read/${userId}`, {
+        method: "PUT",
+        credentials: "include",
+      });
+    } catch (error) {
+      console.log("Error in markAsSeen:", error);
+    }
+  },
+
+  deleteMessage: async (messageId) => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/messages/${messageId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok) {
+        set({
+          messages: get().messages.filter((m) => m._id !== messageId),
+        });
+      }
+    } catch (error) {
+      console.log("Error in deleteMessage:", error);
+    }
+  },
 
   subscribeToMessages: () => {
-    const { selectedUser } = get();
-    if (!selectedUser) return;
-
     const socket = useAuthStore.getState().socket;
+    if (!socket) return;
 
     socket.on("newMessage", (newMessage) => {
-      const isMessageRelevant = 
-        (newMessage.senderId === selectedUser._id && newMessage.receiverId === useAuthStore.getState().authUser._id) ||
-        (newMessage.senderId === useAuthStore.getState().authUser._id && newMessage.receiverId === selectedUser._id);
+      const { selectedUser, messages, users } = get();
+      const isMessageFromSelectedUser = selectedUser && newMessage.senderId === selectedUser._id;
       
-      if (!isMessageRelevant) return;
+      if (isMessageFromSelectedUser) {
+        set({
+          messages: [...messages, newMessage],
+        });
+        get().markAsSeen(newMessage.senderId);
+      } else {
+        // Increment unread count for the sender
+        set({
+          users: users.map(u => 
+            u._id === newMessage.senderId 
+              ? { ...u, unreadCount: (u.unreadCount || 0) + 1 } 
+              : u
+          )
+        });
+      }
+    });
 
+    socket.on("messageDeleted", (messageId) => {
       set({
-        messages: [...get().messages, newMessage],
+        messages: get().messages.filter((m) => m._id !== messageId),
       });
     });
   },
@@ -93,7 +134,17 @@ export const useChatStore = create((set, get) => ({
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
     socket.off("newMessage");
+    socket.off("messageDeleted");
   },
 
-  setSelectedUser: (selectedUser) => set({ selectedUser }),
+  setSelectedUser: (selectedUser) => {
+    set({ selectedUser });
+    if (selectedUser) {
+      set({
+        users: get().users.map(u => 
+          u._id === selectedUser._id ? { ...u, unreadCount: 0 } : u
+        )
+      });
+    }
+  },
 }));

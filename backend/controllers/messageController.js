@@ -7,7 +7,18 @@ const getUsersForSidebar = async (req, res) => {
     const loggedInUserId = req.user._id;
     const filteredUsers = await User.find({ _id: { $ne: loggedInUserId } }).select("-password");
 
-    res.status(200).json(filteredUsers);
+    const usersWithUnreadCount = await Promise.all(
+      filteredUsers.map(async (user) => {
+        const unreadCount = await Message.countDocuments({
+          senderId: user._id,
+          receiverId: loggedInUserId,
+          isSeen: false,
+        });
+        return { ...user.toObject(), unreadCount };
+      })
+    );
+
+    res.status(200).json(usersWithUnreadCount);
   } catch (error) {
     console.error("Error in getUsersForSidebar: ", error.message);
     res.status(500).json({ error: "Internal server error" });
@@ -25,6 +36,11 @@ const getMessages = async (req, res) => {
         { senderId: userToChatId, receiverId: myId },
       ],
     });
+
+    await Message.updateMany(
+      { senderId: userToChatId, receiverId: myId, isSeen: false },
+      { $set: { isSeen: true } }
+    );
 
     res.status(200).json(messages);
   } catch (error) {
@@ -68,4 +84,51 @@ const sendMessage = async (req, res) => {
   }
 };
 
-module.exports = { getUsersForSidebar, getMessages, sendMessage };
+const markMessagesAsRead = async (req, res) => {
+  try {
+    const { id: senderId } = req.params;
+    const receiverId = req.user._id;
+
+    await Message.updateMany(
+      { senderId, receiverId, isSeen: false },
+      { $set: { isSeen: true } }
+    );
+
+    res.status(200).json({ message: "Messages marked as read" });
+  } catch (error) {
+    console.error("Error in markMessagesAsRead: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const deleteMessage = async (req, res) => {
+  try {
+    const { id: messageId } = req.params;
+    const userId = req.user._id;
+
+    const message = await Message.findById(messageId);
+    if (!message) {
+      return res.status(404).json({ error: "Message not found" });
+    }
+
+    if (message.senderId.toString() !== userId.toString()) {
+      return res.status(403).json({ error: "You can only delete your own messages" });
+    }
+
+    await Message.findByIdAndDelete(messageId);
+
+    // Notify receiver via socket
+    const { getReceiverSocketId, io } = require("../lib/socket");
+    const receiverSocketId = getReceiverSocketId(message.receiverId);
+    if (receiverSocketId) {
+      io.to(receiverSocketId).emit("messageDeleted", messageId);
+    }
+
+    res.status(200).json({ message: "Message deleted successfully" });
+  } catch (error) {
+    console.error("Error in deleteMessage: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+module.exports = { getUsersForSidebar, getMessages, sendMessage, markMessagesAsRead, deleteMessage };

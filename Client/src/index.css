@@ -618,6 +618,28 @@ body {
   color: var(--c-muted);
 }
 .status-online { color: #22c55e !important; }
+ 
+ .unread-badge {
+   background: linear-gradient(135deg, #7c6cfb, #c084fc);
+   color: white;
+   font-size: 0.7rem;
+   font-weight: 700;
+   min-width: 18px;
+   height: 18px;
+   padding: 0 5px;
+   border-radius: 10px;
+   display: flex;
+   align-items: center;
+   justify-content: center;
+   margin-left: auto;
+   box-shadow: 0 2px 8px rgba(124, 108, 251, 0.4);
+   animation: badgePop 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+ }
+ 
+ @keyframes badgePop {
+   0% { transform: scale(0); }
+   100% { transform: scale(1); }
+ }
 
 /* ── Icon buttons ──────────────────────────── */
 .icon-btn {
@@ -730,7 +752,80 @@ body {
   display: flex;
   flex-direction: column;
   gap: 4px;
+  position: relative;
 }
+ 
+ .msg-menu-wrap {
+   position: absolute;
+   top: 6px;
+   right: 6px;
+   z-index: 10;
+ }
+ 
+ .msg-menu-btn {
+   background: none;
+   border: none;
+   color: rgba(255,255,255,0.3);
+   cursor: pointer;
+   padding: 4px;
+   border-radius: 4px;
+   display: flex;
+   transition: color var(--trans), background var(--trans);
+   opacity: 0;
+ }
+ 
+ .msg-bubble:hover .msg-menu-btn {
+   opacity: 1;
+ }
+ 
+ .msg-menu-btn:hover {
+   color: #fff;
+   background: rgba(255,255,255,0.1);
+ }
+ 
+ .msg-dropdown {
+   position: absolute;
+   top: 100%;
+   right: 0;
+   background: #1e1e2d;
+   border: 1px solid var(--c-border);
+   border-radius: 8px;
+   padding: 4px;
+   min-width: 120px;
+   box-shadow: 0 8px 16px rgba(0,0,0,0.4);
+   margin-top: 4px;
+   animation: menuSlide 0.2s ease-out;
+ }
+ 
+ .msg-dropdown-item {
+   width: 100%;
+   padding: 8px 12px;
+   border: none;
+   background: none;
+   color: var(--c-text);
+   font-size: 0.82rem;
+   text-align: left;
+   cursor: pointer;
+   border-radius: 6px;
+   transition: background var(--trans);
+ }
+ 
+ .msg-dropdown-item:hover {
+   background: rgba(255,255,255,0.05);
+ }
+ 
+ .msg-dropdown-item.danger {
+   color: #ef4444;
+ }
+ 
+ .msg-dropdown-item.danger:hover {
+   background: rgba(239, 68, 68, 0.1);
+ }
+ 
+ @keyframes menuSlide {
+   from { transform: translateY(-5px); opacity: 0; }
+   to { transform: translateY(0); opacity: 1; }
+ }
 .bubble-me {
   background: linear-gradient(135deg, var(--c-violet), var(--c-violet-2));
   border-bottom-right-radius: 4px;

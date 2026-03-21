@@ -219,7 +219,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className="chat-root">
+    <div className={`chat-root ${selectedUser ? "user-selected" : ""}`}>
       {/* Sidebar */}
       <aside className="chat-sidebar">
         <div className="sidebar-head">
@@ -305,6 +305,11 @@ export default function ChatPage() {
           <>
             <div className="chat-header">
               <div className="chat-header-left">
+                <button className="back-btn" onClick={() => setSelectedUser(null)}>
+                  <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
+                    <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
+                  </svg>
+                </button>
                 <Avatar contact={selectedUser} size={38} />
                 <div>
                   <p className="chat-header-name">{selectedUser.name}</p>

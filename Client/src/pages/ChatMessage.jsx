@@ -25,7 +25,7 @@ export default function ChatMessage({ message, selectedUser }) {
   return (
     <div className={`msg-row ${fromMe ? "msg-me" : "msg-them"}`}>
       {!fromMe && <Avatar contact={selectedUser} size={28} />}
-      <div className={`msg-bubble ${fromMe ? "bubble-me" : "bubble-them"} ${message.image ? "bubble-img" : ""}`}>
+      <div className={`msg-bubble ${fromMe ? "bubble-me" : "bubble-them"} ${((message.image || (message.images && message.images.length > 0)) && !message.text) ? "bubble-img" : ""}`}>
         {fromMe && (
           <div className="msg-menu-wrap" ref={menuRef}>
             <button className="msg-menu-btn" onClick={() => setShowMenu(!showMenu)}>
@@ -42,11 +42,21 @@ export default function ChatMessage({ message, selectedUser }) {
             )}
           </div>
         )}
-        {message.image ? (
-          <img src={message.image} alt="sent" className="msg-image" />
-        ) : (
-          <p className="msg-text">{message.text}</p>
-        )}
+        {message.text && <p className="msg-text" style={{ marginBottom: (message.image || (message.images && message.images.length > 0)) ? '8px' : 0 }}>{message.text}</p>}
+        {message.image && <img src={message.image} alt="sent" className="msg-image" style={{ marginBottom: (message.images && message.images.length > 0) ? '8px' : 0 }} />}
+        {message.images && message.images.map((img, idx) => (
+          <img 
+            key={idx} 
+            src={img} 
+            alt="sent" 
+            className="msg-image" 
+            style={{ 
+              marginBottom: idx === message.images.length - 1 ? 0 : '8px',
+              maxWidth: '100%',
+              borderRadius: '12px'
+            }} 
+          />
+        ))}
         <span className="msg-time">{time}</span>
       </div>
     </div>

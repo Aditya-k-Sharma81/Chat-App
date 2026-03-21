@@ -158,7 +158,7 @@ export default function ChatPage() {
 
     await sendChatMessage({
       text: text,
-      image: pendingImages.length > 0 ? pendingImages[0].src : null,
+      images: pendingImages.map((img) => img.src),
     });
 
     setInput("");

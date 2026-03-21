@@ -51,7 +51,7 @@ const getMessages = async (req, res) => {
 
 const sendMessage = async (req, res) => {
   try {
-    const { text, image } = req.body;
+    const { text, image, images } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
@@ -62,11 +62,19 @@ const sendMessage = async (req, res) => {
       imageUrl = uploadResponse.secure_url;
     }
 
+    let imageUrls = [];
+    if (images && Array.isArray(images) && images.length > 0) {
+      const uploadPromises = images.map((img) => cloudinary.uploader.upload(img));
+      const uploadResponses = await Promise.all(uploadPromises);
+      imageUrls = uploadResponses.map((res) => res.secure_url);
+    }
+
     const newMessage = new Message({
       senderId,
       receiverId,
       text,
       image: imageUrl,
+      images: imageUrls,
     });
 
     await newMessage.save();

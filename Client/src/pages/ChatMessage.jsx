@@ -22,6 +22,23 @@ export default function ChatMessage({ message, selectedUser }) {
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, [showMenu]);
 
+  const handleDownload = async (url) => {
+    try {
+      const response = await fetch(url);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = "nexchat-image-" + Date.now() + ".jpg";
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
+  };
+
   return (
     <div className={`msg-row ${fromMe ? "msg-me" : "msg-them"}`}>
       {!fromMe && <Avatar contact={selectedUser} size={28} />}
@@ -43,19 +60,34 @@ export default function ChatMessage({ message, selectedUser }) {
           </div>
         )}
         {message.text && <p className="msg-text" style={{ marginBottom: (message.image || (message.images && message.images.length > 0)) ? '8px' : 0 }}>{message.text}</p>}
-        {message.image && <img src={message.image} alt="sent" className="msg-image" style={{ marginBottom: (message.images && message.images.length > 0) ? '8px' : 0 }} />}
+        {message.image && (
+          <div className="msg-img-container" style={{ position: "relative" }}>
+            <img src={message.image} alt="sent" className="msg-image" style={{ marginBottom: (message.images && message.images.length > 0) ? '8px' : 0 }} />
+            <button className="msg-download-btn" onClick={() => handleDownload(message.image)}>
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </button>
+          </div>
+        )}
         {message.images && message.images.map((img, idx) => (
-          <img 
-            key={idx} 
-            src={img} 
-            alt="sent" 
-            className="msg-image" 
-            style={{ 
-              marginBottom: idx === message.images.length - 1 ? 0 : '8px',
-              maxWidth: '100%',
-              borderRadius: '12px'
-            }} 
-          />
+          <div key={idx} className="msg-img-container" style={{ position: "relative" }}>
+            <img 
+              src={img} 
+              alt="sent" 
+              className="msg-image" 
+              style={{ 
+                marginBottom: idx === message.images.length - 1 ? 0 : '8px',
+                maxWidth: '100%',
+                borderRadius: '12px'
+              }} 
+            />
+            <button className="msg-download-btn" onClick={() => handleDownload(img)}>
+               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+            </button>
+          </div>
         ))}
         <span className="msg-time">{time}</span>
       </div>

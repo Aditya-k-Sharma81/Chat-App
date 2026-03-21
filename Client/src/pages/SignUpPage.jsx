@@ -20,7 +20,7 @@ export default function SignUpPage({ onSwitch }) {
     if (score <= 1) return { level: 1, label: "Weak", color: "#ef4444" };
     if (score === 2) return { level: 2, label: "Fair", color: "#f59e0b" };
     if (score === 3) return { level: 3, label: "Good", color: "#10b981" };
-    return { level: 4, label: "Strong", color: "#6C63FF" };
+    return { level: 4, label: "Strong", color: "#00a884" };
   };
 
   const strength = getStrength(password);
@@ -28,16 +28,20 @@ export default function SignUpPage({ onSwitch }) {
   const handleSubmit = async (e) => {
     e.preventDefault();
     try {
-      await signup({ name, email, password });
-      Swal.fire({
-        icon: "success",
-        title: "Registration Successful!",
-        text: "Welcome to NexChat! Your account has been created.",
-        timer: 3000,
-        showConfirmButton: false,
-        background: "#1e1e2d",
-        color: "#fff",
-      });
+      const success = await signup({ name, email, password });
+      if (success) {
+        Swal.fire({
+          icon: "success",
+          title: "Registration Successful!",
+          text: "Account created! Please login to continue.",
+          timer: 2000,
+          showConfirmButton: false,
+          background: "#1e1e2d",
+          color: "#fff",
+        }).then(() => {
+          onSwitch?.();
+        });
+      }
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -69,8 +73,8 @@ export default function SignUpPage({ onSwitch }) {
               <path d="M8 34 L14 28" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
               <defs>
                 <linearGradient id="logoGradSU" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#6C63FF" />
-                  <stop offset="1" stopColor="#C084FC" />
+                  <stop stopColor="#00a884" />
+                  <stop offset="1" stopColor="#008069" />
                 </linearGradient>
               </defs>
             </svg>

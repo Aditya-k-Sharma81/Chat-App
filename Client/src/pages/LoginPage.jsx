@@ -54,8 +54,8 @@ export default function LoginPage({ onSwitch }) {
               <path d="M8 34 L14 28" stroke="white" strokeWidth="2.5" strokeLinecap="round" />
               <defs>
                 <linearGradient id="logoGrad" x1="0" y1="0" x2="48" y2="48" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#6C63FF" />
-                  <stop offset="1" stopColor="#C084FC" />
+                  <stop stopColor="#00a884" />
+                  <stop offset="1" stopColor="#008069" />
                 </linearGradient>
               </defs>
             </svg>

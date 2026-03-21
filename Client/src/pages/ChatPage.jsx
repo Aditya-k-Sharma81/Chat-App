@@ -231,7 +231,7 @@ export default function ChatPage() {
               <circle cx="21" cy="16" r="2.2" fill="white" />
               <defs>
                 <linearGradient id="cg" x1="0" y1="0" x2="32" y2="32" gradientUnits="userSpaceOnUse">
-                  <stop stopColor="#7c6cfb" /><stop offset="1" stopColor="#c084fc" />
+                  <stop stopColor="#00a884" /><stop offset="1" stopColor="#008069" />
                 </linearGradient>
               </defs>
             </svg>
@@ -356,7 +356,11 @@ export default function ChatPage() {
                 />
                 <input ref={fileRef} type="file" accept="image/*" className="hidden" style={{ display: "none" }} onChange={handleImageSelect} />
                 <button className="icon-btn" onClick={() => fileRef.current?.click()}>📎</button>
-                <button className="send-btn" onClick={handleSendMessage}>Send</button>
+                <button className="send-btn" onClick={handleSendMessage}>
+                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                    <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z" />
+                  </svg>
+                </button>
               </div>
             </div>
           </>

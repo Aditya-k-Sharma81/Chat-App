@@ -16,8 +16,8 @@ export const useAuthStore = create((set, get) => ({
       const res = await fetch(`${BASE_URL}/api/user/me`, {
         credentials: "include",
       });
-      if (res.ok) {
-        const data = await res.json();
+      const data = await res.json();
+      if (res.ok && data.success !== false) {
         set({ authUser: data });
         get().connectSocket();
       } else {
@@ -40,13 +40,12 @@ export const useAuthStore = create((set, get) => ({
         body: JSON.stringify(data),
         credentials: "include",
       });
-      if (res.ok) {
-        const user = await res.json();
-        set({ authUser: user });
+      const resData = await res.json();
+      if (resData.success !== false) {
+        set({ authUser: resData });
         get().connectSocket();
       } else {
-        const error = await res.json();
-        throw new Error(error.message);
+        throw new Error(resData.message);
       }
     } catch (error) {
       throw error;
@@ -58,19 +57,17 @@ export const useAuthStore = create((set, get) => ({
   signup: async (data) => {
     set({ isSigningUp: true });
     try {
-      const res = await fetch(`${BASE_URL}/api/user`, {
+      const res = await fetch(`${BASE_URL}/api/user/signup`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(data),
         credentials: "include",
       });
-      if (res.ok) {
-        const user = await res.json();
-        set({ authUser: user });
-        get().connectSocket();
+      const resData = await res.json();
+      if (resData.success !== false) {
+        return true;
       } else {
-        const error = await res.json();
-        throw new Error(error.message);
+        throw new Error(resData.message);
       }
     } catch (error) {
       throw error;
@@ -100,13 +97,12 @@ export const useAuthStore = create((set, get) => ({
         body: JSON.stringify(data),
         credentials: "include",
       });
-      if (res.ok) {
-        const updatedUser = await res.json();
-        set({ authUser: updatedUser });
-        return updatedUser;
+      const resData = await res.json();
+      if (resData.success !== false) {
+        set({ authUser: resData });
+        return resData;
       } else {
-        const error = await res.json();
-        throw new Error(error.message);
+        throw new Error(resData.message);
       }
     } catch (error) {
       throw error;

@@ -13,15 +13,13 @@ const signUp = async (req, res) => {
         const { name, email, password, pic } = req.body;
 
         if (!name || !email || !password) {
-            res.status(400);
-            throw new Error('Please include all fields');
+            return res.status(200).json({ success: false, message: 'Please include all fields' });
         }
 
         const userExists = await User.findOne({ email });
 
         if (userExists) {
-            res.status(400);
-            throw new Error('User already exists');
+            return res.status(200).json({ success: false, message: 'User already exists' });
         }
 
         let picUrl = pic;
@@ -40,14 +38,6 @@ const signUp = async (req, res) => {
         });
 
         if (user) {
-            const token = generateToken(user._id);
-            res.cookie('token', token, {
-                httpOnly: true,
-                secure: false, // Set to false for local development (no HTTPS)
-                sameSite: 'lax',
-                maxAge: 30 * 24 * 60 * 60 * 1000,
-            });
-
             res.status(201).json({
                 _id: user._id,
                 name: user.name,
@@ -56,11 +46,10 @@ const signUp = async (req, res) => {
                 bio: user.bio,
             });
         } else {
-            res.status(400);
-            throw new Error('Invalid user data');
+            return res.status(200).json({ success: false, message: 'Invalid user data' });
         }
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(200).json({ success: false, message: error.message });
     }
 };
 
@@ -87,11 +76,10 @@ const login = async (req, res) => {
                 bio: user.bio,
             });
         } else {
-            res.status(401);
-            throw new Error('Invalid email or password');
+            return res.status(200).json({ success: false, message: 'Invalid email or password' });
         }
     } catch (error) {
-        res.status(401).json({ message: error.message });
+        res.status(200).json({ success: false, message: error.message });
     }
 };
 
@@ -130,11 +118,10 @@ const updateProfile = async (req, res) => {
                 bio: updatedUser.bio,
             });
         } else {
-            res.status(404);
-            throw new Error('User not found');
+            return res.status(200).json({ success: false, message: 'User not found' });
         }
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(200).json({ success: false, message: error.message });
     }
 };
 
@@ -151,11 +138,10 @@ const getMe = async (req, res) => {
                 bio: user.bio,
             });
         } else {
-            res.status(404);
-            throw new Error('User not found');
+            return res.status(200).json({ success: false, message: 'User not found' });
         }
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(200).json({ success: false, message: error.message });
     }
 };
 
@@ -181,7 +167,7 @@ const allUsers = async (req, res) => {
         const users = await User.find(keyword).find({ _id: { $ne: req.user._id } });
         res.send(users);
     } catch (error) {
-        res.status(400).json({ message: error.message });
+        res.status(200).json({ success: false, message: error.message });
     }
 };
 

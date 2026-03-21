@@ -1,33 +1,18 @@
-import { useState, useEffect } from "react";
+import { useEffect, useState } from "react";
 import LoginPage from "./pages/LoginPage";
 import SignUpPage from "./pages/SignUpPage";
 import ChatPage from "./pages/ChatPage";
+import { useAuthStore } from "./store/useAuthStore";
 
 export default function App() {
-  const [page, setPage] = useState("loading");
+  const { authUser, checkAuth, isCheckingAuth } = useAuthStore();
+  const [showSignUp, setShowSignUp] = useState(false);
 
   useEffect(() => {
-    const checkSession = async () => {
-      try {
-        const response = await fetch("http://localhost:5000/api/user/me", {
-          method: "GET",
-          credentials: "include",
-        });
+    checkAuth();
+  }, [checkAuth]);
 
-        if (response.ok) {
-          setPage("chat");
-        } else {
-          setPage("login");
-        }
-      } catch (error) {
-        setPage("login");
-      }
-    };
-
-    checkSession();
-  }, []);
-
-  if (page === "loading") {
+  if (isCheckingAuth && !authUser) {
     return (
       <div style={{
         display: "flex",
@@ -55,7 +40,15 @@ export default function App() {
     );
   }
 
-  if (page === "chat") return <ChatPage onLogout={() => setPage("login")} />;
-  if (page === "signup") return <SignUpPage onSwitch={() => setPage("login")} onSignUp={() => setPage("chat")} />;
-  return <LoginPage onSwitch={() => setPage("signup")} onLogin={() => setPage("chat")} />;
+  return (
+    <div>
+      {authUser ? (
+        <ChatPage />
+      ) : showSignUp ? (
+        <SignUpPage onSwitch={() => setShowSignUp(false)} />
+      ) : (
+        <LoginPage onSwitch={() => setShowSignUp(true)} />
+      )}
+    </div>
+  );
 }

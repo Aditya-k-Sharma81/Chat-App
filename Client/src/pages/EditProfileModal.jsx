@@ -3,7 +3,7 @@ import { useState, useRef } from "react";
 export default function EditProfileModal({ profile, onSave, onClose }) {
   const [name, setName]   = useState(profile.name);
   const [bio, setBio]     = useState(profile.bio);
-  const [avatar, setAvatar] = useState(profile.avatar); // base64 or null
+  const [avatar, setAvatar] = useState(profile.pic); // Use pic from profile
   const fileRef = useRef(null);
 
   const handleAvatarChange = (e) => {

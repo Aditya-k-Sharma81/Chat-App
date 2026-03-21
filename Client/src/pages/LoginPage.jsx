@@ -1,46 +1,26 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
+import { useAuthStore } from "../store/useAuthStore";
 
-export default function LoginPage({ onSwitch, onLogin }) {
+export default function LoginPage({ onSwitch }) {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const { login, isLoggingIn } = useAuthStore();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-
     try {
-      const response = await fetch("http://localhost:5000/api/user/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ email, password }),
+      await login({ email, password });
+      Swal.fire({
+        icon: "success",
+        title: "Login Successful!",
+        text: "Welcome back!",
+        timer: 1500,
+        showConfirmButton: false,
+        background: "#1e1e2d",
+        color: "#fff",
       });
-
-      const data = await response.json();
-
-      if (response.ok) {
-        Swal.fire({
-          icon: "success",
-          title: "Login Successful!",
-          text: "Welcome back!",
-          timer: 2000,
-          timerProgressBar: true,
-          showConfirmButton: false,
-          background: "#1e1e2d",
-          color: "#fff",
-        });
-
-        setTimeout(() => {
-          onLogin?.();
-        }, 1500);
-      } else {
-        throw new Error(data.message || "Invalid email or password");
-      }
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -49,8 +29,6 @@ export default function LoginPage({ onSwitch, onLogin }) {
         background: "#1e1e2d",
         color: "#fff",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -181,10 +159,10 @@ export default function LoginPage({ onSwitch, onLogin }) {
               {/* Submit */}
               <button
                 type="submit"
-                className={`login-btn ${loading ? "login-btn-loading" : ""}`}
-                disabled={loading}
+                className={`login-btn ${isLoggingIn ? "login-btn-loading" : ""}`}
+                disabled={isLoggingIn}
               >
-                {loading ? (
+                {isLoggingIn ? (
                   <span className="btn-spinner" />
                 ) : (
                   <>

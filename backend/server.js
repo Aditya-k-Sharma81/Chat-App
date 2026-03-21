@@ -14,15 +14,7 @@ dotenv.config();
 // Connect to database
 connectDB();
 
-const app = express();
-const server = http.createServer(app); // 3. Create HTTP server
-
-const io = new Server(server, { // 4. Initialize Socket.io
-    cors: {
-        origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
-        credentials: true,
-    },
-});
+const { app, server, io } = require("./lib/socket");
 
 // Middleware
 app.use(requestLogger);
@@ -36,27 +28,9 @@ app.use(cors({
     allowedHeaders: ["Content-Type", "Authorization"],
 }));
 
-// Socket.io Logic
-const userSocketMap = {}; // { userId: socketId }
-
-io.on('connection', (socket) => {
-    console.log('a user connected', socket.id);
-
-    const userId = socket.handshake.query.userId;
-    if (userId !== "undefined") userSocketMap[userId] = socket.id;
-
-    // io.emit() is used to send events to all the connected clients
-    io.emit("getOnlineUsers", Object.keys(userSocketMap));
-
-    socket.on('disconnect', () => {
-        console.log('user disconnected', socket.id);
-        delete userSocketMap[userId];
-        io.emit("getOnlineUsers", Object.keys(userSocketMap));
-    });
-});
-
 // Routes
 app.use('/api/user', require('./routes/userRoutes'));
+app.use('/api/messages', require('./routes/messageRoutes'));
 
 app.get('/', (req, res) => {
     res.send('API is running...');

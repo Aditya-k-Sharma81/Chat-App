@@ -1,12 +1,13 @@
 import { useState } from "react";
 import Swal from "sweetalert2";
+import { useAuthStore } from "../store/useAuthStore";
 
 export default function SignUpPage({ onSwitch }) {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
-  const [loading, setLoading] = useState(false);
+  const { signup, isSigningUp } = useAuthStore();
 
   // Password strength
   const getStrength = (pwd) => {
@@ -26,39 +27,17 @@ export default function SignUpPage({ onSwitch }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    setLoading(true);
-
     try {
-      const response = await fetch("http://localhost:5000/api/user/signup", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify({ name, email, password }),
+      await signup({ name, email, password });
+      Swal.fire({
+        icon: "success",
+        title: "Registration Successful!",
+        text: "Welcome to NexChat! Your account has been created.",
+        timer: 3000,
+        showConfirmButton: false,
+        background: "#1e1e2d",
+        color: "#fff",
       });
-
-      const data = await response.json();
-
-      if (response.status === 201) {
-        Swal.fire({
-          icon: "success",
-          title: "Registration Successful!",
-          text: "Welcome to NexChat! Your account has been created.",
-          timer: 3000,
-          timerProgressBar: true,
-          showConfirmButton: false,
-          background: "#1e1e2d",
-          color: "#fff",
-        });
-        
-        // Wait for the popup timer to finish or redirect immediately
-        setTimeout(() => {
-          onSwitch?.();
-        }, 1500);
-      } else {
-        throw new Error(data.message || "Failed to register");
-      }
     } catch (error) {
       Swal.fire({
         icon: "error",
@@ -67,8 +46,6 @@ export default function SignUpPage({ onSwitch }) {
         background: "#1e1e2d",
         color: "#fff",
       });
-    } finally {
-      setLoading(false);
     }
   };
 
@@ -238,10 +215,10 @@ export default function SignUpPage({ onSwitch }) {
               {/* Submit */}
               <button
                 type="submit"
-                className={`login-btn ${loading ? "login-btn-loading" : ""}`}
-                disabled={loading}
+                className={`login-btn ${isSigningUp ? "login-btn-loading" : ""}`}
+                disabled={isSigningUp}
               >
-                {loading ? (
+                {isSigningUp ? (
                   <span className="btn-spinner" />
                 ) : (
                   <>

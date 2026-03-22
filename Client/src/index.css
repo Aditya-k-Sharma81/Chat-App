@@ -1107,10 +1107,54 @@ body {
   box-shadow: 0 8px 24px rgba(0,0,0,0.6);
 }
 
+.msg-img-blur {
+  filter: blur(25px);
+  scale: 1.1; /* Scale up slightly to hide blurred edges */
+  transition: filter 0.3s ease, transform 0.3s ease;
+}
+
 .msg-img-container {
   position: relative;
   display: inline-block;
   line-height: 0;
+  overflow: hidden; /* To contain the scaled blurred image */
+  border-radius: 12px;
+}
+
+.msg-download-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.2);
+  cursor: pointer;
+  z-index: 10;
+  color: #fff;
+  transition: background 0.2s ease;
+}
+
+.msg-download-overlay:hover {
+  background: rgba(0,0,0,0.4);
+}
+
+.msg-download-icon-center {
+  background: rgba(0,0,0,0.5);
+  border-radius: 50%;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 8px;
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+}
+
+.msg-download-overlay span {
+  font-size: 0.75rem;
+  font-weight: 500;
+  text-shadow: 0 2px 4px rgba(0,0,0,0.5);
 }
 
 .msg-download-btn {
@@ -1209,9 +1253,87 @@ body {
   background: rgba(124,108,251,0.12) !important;
 }
 
+/* ── Image modal (Lightbox) ────────────────── */
+.image-modal-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.9);
+  backdrop-filter: blur(8px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  padding: 20px;
+  animation: fadeIn 0.3s ease;
+  cursor: zoom-out;
+}
+
+.image-modal-container {
+  position: relative;
+  max-width: 90vw;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: zoomIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  cursor: default;
+}
+
+@keyframes zoomIn {
+  from { transform: scale(0.9); opacity: 0; }
+  to { transform: scale(1); opacity: 1; }
+}
+
+.image-modal-close {
+  position: absolute;
+  top: -40px;
+  right: -0px;
+  background: none;
+  border: none;
+  color: #fff;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  transition: transform 0.2s ease;
+}
+.image-modal-close:hover { transform: scale(1.1); }
+
+.image-modal-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 15px;
+}
+
+.image-modal-img {
+  max-width: 100%;
+  max-height: 80vh;
+  object-fit: contain;
+  border-radius: 8px;
+  box-shadow: 0 20px 50px rgba(0,0,0,0.5);
+}
+
+.image-modal-download {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 10px 20px;
+  background: rgba(124, 108, 251, 0.2);
+  border: 1px solid rgba(124, 108, 251, 0.4);
+  border-radius: 99px;
+  color: #fff;
+  text-decoration: none;
+  font-size: 0.9rem;
+  font-weight: 600;
+  transition: background 0.2s ease;
+}
+.image-modal-download:hover {
+  background: rgba(124, 108, 251, 0.4);
+}
+
 /* ═══════════════════════════════════════════════
    EDIT PROFILE MODAL
-═══════════════════════════════════════════════ */
+   ═══════════════════════════════════════════════ */
 .ep-overlay {
   position: fixed;
   inset: 0;

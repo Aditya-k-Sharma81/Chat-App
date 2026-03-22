@@ -42,6 +42,13 @@ const getMessages = async (req, res) => {
       { $set: { isSeen: true } }
     );
 
+    // Notify the sender that their messages were read
+    const { getReceiverSocketId, io } = require("../lib/socket");
+    const senderSocketId = getReceiverSocketId(userToChatId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("messagesRead", { readerId: myId });
+    }
+
     res.status(200).json(messages);
   } catch (error) {
     console.error("Error in getMessages: ", error.message);
@@ -101,6 +108,13 @@ const markMessagesAsRead = async (req, res) => {
       { senderId, receiverId, isSeen: false },
       { $set: { isSeen: true } }
     );
+
+    // Notify the sender that their messages were read
+    const { getReceiverSocketId, io } = require("../lib/socket");
+    const senderSocketId = getReceiverSocketId(senderId);
+    if (senderSocketId) {
+      io.to(senderSocketId).emit("messagesRead", { readerId: receiverId });
+    }
 
     res.status(200).json({ message: "Messages marked as read" });
   } catch (error) {

@@ -5,11 +5,16 @@ import { Avatar } from "./ChatPage";
 
 export default function ChatMessage({ message, selectedUser }) {
   const { authUser } = useAuthStore();
-  const { deleteMessage } = useChatStore();
+  const { deleteMessage, setPreviewImage } = useChatStore();
+  const fromMe = message.senderId === authUser._id;
   const [showMenu, setShowMenu] = useState(false);
+  const [isDownloaded, setIsDownloaded] = useState(() => {
+    if (fromMe) return true;
+    const downloaded = JSON.parse(localStorage.getItem("downloaded_msgs") || "[]");
+    return downloaded.includes(message._id);
+  });
   const menuRef = useRef(null);
 
-  const fromMe = message.senderId === authUser._id;
   const time = new Date(message.createdAt).toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
 
   useEffect(() => {
@@ -23,6 +28,13 @@ export default function ChatMessage({ message, selectedUser }) {
   }, [showMenu]);
 
   const handleDownload = async (url) => {
+    setIsDownloaded(true); // Mark as downloaded when starting
+    if (!fromMe) {
+        const downloaded = JSON.parse(localStorage.getItem("downloaded_msgs") || "[]");
+        if (!downloaded.includes(message._id)) {
+          localStorage.setItem("downloaded_msgs", JSON.stringify([...downloaded, message._id]));
+        }
+    }
     try {
       const response = await fetch(url);
       const blob = await response.blob();
@@ -38,6 +50,35 @@ export default function ChatMessage({ message, selectedUser }) {
       console.error("Download failed:", error);
     }
   };
+
+  const ImageComponent = ({ src, alt, className, style }) => (
+    <div className="msg-img-container" style={{ position: "relative" }}>
+      <img 
+        src={src} 
+        alt={alt} 
+        className={`${className} ${!isDownloaded ? 'msg-img-blur' : ''}`} 
+        style={style} 
+        onClick={() => isDownloaded && setPreviewImage(src)}
+      />
+      {!isDownloaded && (
+        <div className="msg-download-overlay" onClick={() => handleDownload(src)}>
+          <div className="msg-download-icon-center">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </div>
+          <span>Download to view</span>
+        </div>
+      )}
+      {isDownloaded && (
+        <button className="msg-download-btn" onClick={() => handleDownload(src)}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+        </button>
+      )}
+    </div>
+  );
 
   return (
     <div className={`msg-row ${fromMe ? "msg-me" : "msg-them"}`}>
@@ -61,35 +102,37 @@ export default function ChatMessage({ message, selectedUser }) {
         )}
         {message.text && <p className="msg-text" style={{ marginBottom: (message.image || (message.images && message.images.length > 0)) ? '8px' : 0 }}>{message.text}</p>}
         {message.image && (
-          <div className="msg-img-container" style={{ position: "relative" }}>
-            <img src={message.image} alt="sent" className="msg-image" style={{ marginBottom: (message.images && message.images.length > 0) ? '8px' : 0 }} />
-            <button className="msg-download-btn" onClick={() => handleDownload(message.image)}>
-              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-            </button>
-          </div>
+          <ImageComponent 
+            src={message.image} 
+            alt="sent" 
+            className="msg-image" 
+            style={{ marginBottom: (message.images && message.images.length > 0) ? '8px' : 0 }} 
+          />
         )}
         {message.images && message.images.map((img, idx) => (
-          <div key={idx} className="msg-img-container" style={{ position: "relative" }}>
-            <img 
-              src={img} 
-              alt="sent" 
-              className="msg-image" 
-              style={{ 
-                marginBottom: idx === message.images.length - 1 ? 0 : '8px',
-                maxWidth: '100%',
-                borderRadius: '12px'
-              }} 
-            />
-            <button className="msg-download-btn" onClick={() => handleDownload(img)}>
-               <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-              </svg>
-            </button>
-          </div>
+          <ImageComponent 
+            key={idx}
+            src={img} 
+            alt="sent" 
+            className="msg-image" 
+            style={{ 
+              marginBottom: idx === message.images.length - 1 ? 0 : '8px',
+              maxWidth: '100%',
+              borderRadius: '12px'
+            }} 
+          />
         ))}
-        <span className="msg-time">{time}</span>
+        <div className="msg-info-row" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end', gap: '4px', marginTop: '2px' }}>
+          <span className="msg-time" style={{ alignSelf: 'unset' }}>{time}</span>
+          {fromMe && (
+            <span className={`msg-status ${message.isSeen ? 'seen' : ''}`} style={{ display: 'flex', marginLeft: '2px' }}>
+              <svg width="16" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: message.isSeen ? '#34b7f1' : '#8696a0' }}>
+                <path d="M18 6L9 17L4 12" />
+                <path d="M23 6L14 17L9 12" />
+              </svg>
+            </span>
+          )}
+        </div>
       </div>
     </div>
   );

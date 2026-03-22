@@ -9,6 +9,9 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
+  previewImage: null,
+
+  setPreviewImage: (image) => set({ previewImage: image }),
 
   getUsers: async () => {
     set({ isUsersLoading: true });
@@ -129,12 +132,24 @@ export const useChatStore = create((set, get) => ({
         messages: get().messages.filter((m) => m._id !== messageId),
       });
     });
+
+    socket.on("messagesRead", ({ readerId }) => {
+      const { selectedUser, messages } = get();
+      if (selectedUser && readerId === selectedUser._id) {
+        set({
+          messages: messages.map((m) =>
+            m.receiverId === readerId ? { ...m, isSeen: true } : m
+          ),
+        });
+      }
+    });
   },
 
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
     socket.off("newMessage");
     socket.off("messageDeleted");
+    socket.off("messagesRead");
   },
 
   setSelectedUser: (selectedUser) => {

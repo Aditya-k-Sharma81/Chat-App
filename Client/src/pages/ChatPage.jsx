@@ -55,6 +55,8 @@ export default function ChatPage() {
     subscribeToMessages,
     unsubscribeFromMessages,
     sendMessage: sendChatMessage,
+    previewImage,
+    setPreviewImage,
   } = useChatStore();
 
   const { authUser, onlineUsers, logout, updateProfile } = useAuthStore();
@@ -392,6 +394,67 @@ export default function ChatPage() {
           onClose={() => setShowEditProfile(false)}
         />
       )}
+
+      {previewImage && <ImageModal />}
+    </div>
+  );
+}
+
+function ImageModal() {
+  const { previewImage, setPreviewImage } = useChatStore();
+  
+  useEffect(() => {
+    const handleKeyDown = (e) => {
+      if (e.key === "Escape") setPreviewImage(null);
+    };
+    if (previewImage) {
+      document.addEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "hidden";
+    }
+    return () => {
+      document.removeEventListener("keydown", handleKeyDown);
+      document.body.style.overflow = "auto";
+    };
+  }, [previewImage, setPreviewImage]);
+
+  if (!previewImage) return null;
+
+  const handleDownload = async (e) => {
+    e.stopPropagation();
+    try {
+      const response = await fetch(previewImage);
+      const blob = await response.blob();
+      const blobUrl = URL.createObjectURL(blob);
+      const link = document.createElement("a");
+      link.href = blobUrl;
+      link.download = `nexchat-image-${Date.now()}.jpg`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(blobUrl);
+    } catch (error) {
+      console.error("Download failed:", error);
+    }
+  };
+
+  return (
+    <div className="image-modal-overlay" onClick={() => setPreviewImage(null)}>
+      <div className="image-modal-container" onClick={(e) => e.stopPropagation()}>
+        <button className="image-modal-close" onClick={() => setPreviewImage(null)}>
+          <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+            <line x1="18" y1="6" x2="6" y2="18" /><line x1="6" y1="6" x2="18" y2="18" />
+          </svg>
+        </button>
+        <div className="image-modal-content">
+          <img src={previewImage} alt="Big preview" className="image-modal-img" />
+          <button className="image-modal-download" onClick={handleDownload} style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+            Download
+          </button>
+        </div>
+      </div>
     </div>
   );
 }

@@ -4,6 +4,7 @@ import EditProfileModal from "./EditProfileModal";
 import ChatMessage from "./ChatMessage";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
+import { formatChatHeaderDate } from "../utils/dateUtils";
 
 export function Avatar({ contact, size = 40 }) {
   if (contact.pic) {
@@ -335,9 +336,24 @@ export default function ChatPage() {
                   <p>No messages yet. Say hello!</p>
                 </div>
               ) : (
-                messages.map((m) => (
-                  <ChatMessage key={m._id} message={m} selectedUser={selectedUser} />
-                ))
+                messages.map((m, index) => {
+                  const currentDate = new Date(m.createdAt).toDateString();
+                  const prevDate = index > 0 ? new Date(messages[index - 1].createdAt).toDateString() : null;
+                  const showDateHeader = currentDate !== prevDate;
+
+                  return (
+                    <div key={m._id} style={{ display: 'contents' }}>
+                      {showDateHeader && (
+                        <div className="date-header-row">
+                          <div className="date-header-pill">
+                            {formatChatHeaderDate(m.createdAt)}
+                          </div>
+                        </div>
+                      )}
+                      <ChatMessage message={m} selectedUser={selectedUser} />
+                    </div>
+                  );
+                })
               )}
               <div ref={messagesEndRef} />
             </div>

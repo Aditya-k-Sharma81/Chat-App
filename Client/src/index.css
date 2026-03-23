@@ -711,10 +711,10 @@ body {
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 24px 20px;
+  padding: 0 20px 24px;
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 0; /* Remove gap between groups to prevent sticky jitters */
   position: relative;
   background: #0b141a;
   scrollbar-width: thin;
@@ -724,8 +724,9 @@ body {
 .message-date-group {
   display: flex;
   flex-direction: column;
-  gap: 16px;
+  gap: 16px; /* Keep gap within groups */
   position: relative;
+  padding-bottom: 8px;
 }
 
 /* ── Date header ───────────────────────────── */
@@ -733,14 +734,17 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  margin: 12px 0;
+  padding: 16px 0 12px; /* Use padding instead of margin for sticky spacing */
   position: sticky;
-  top: 10px; /* Small gap from the top of the chat area or previous header */
-  z-index: 20;
+  top: 0; /* Pin exactly at the top */
+  z-index: 30;
+  pointer-events: none; /* Let clicks pass through to messages if they overlap slightly */
 }
 
+/* Ensure the pill center stays interactive if needed, though usually not */
 .date-header-pill {
-  background: #182229;
+  pointer-events: auto;
+  background: rgba(24, 34, 41, 0.95); /* Slightly more opaque */
   color: #8696a0;
   padding: 6px 16px;
   border-radius: 999px;

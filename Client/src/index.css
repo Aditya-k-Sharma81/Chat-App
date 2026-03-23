@@ -711,10 +711,8 @@ body {
 .chat-messages {
   flex: 1;
   overflow-y: auto;
-  padding: 0 20px 24px;
-  display: flex;
-  flex-direction: column;
-  gap: 0; /* Remove gap between groups to prevent sticky jitters */
+  padding: 0 0 24px; /* Remove side padding from container, move to messages */
+  display: block; /* Use block instead of flex for more standard sticky behavior */
   position: relative;
   background: #0b141a;
   scrollbar-width: thin;
@@ -724,9 +722,9 @@ body {
 .message-date-group {
   display: flex;
   flex-direction: column;
-  gap: 16px; /* Keep gap within groups */
+  gap: 16px;
   position: relative;
-  padding-bottom: 8px;
+  padding: 0 20px 16px; /* Restore side padding here */
 }
 
 /* ── Date header ───────────────────────────── */
@@ -734,27 +732,27 @@ body {
   display: flex;
   justify-content: center;
   align-items: center;
-  padding: 16px 0 12px; /* Use padding instead of margin for sticky spacing */
+  padding: 12px 0;
   position: sticky;
-  top: 0; /* Pin exactly at the top */
-  z-index: 30;
-  pointer-events: none; /* Let clicks pass through to messages if they overlap slightly */
+  top: 0;
+  z-index: 40;
+  pointer-events: none;
+  margin: 0 -20px; /* Offset side padding to span full width if needed */
 }
 
-/* Ensure the pill center stays interactive if needed, though usually not */
 .date-header-pill {
   pointer-events: auto;
-  background: rgba(24, 34, 41, 0.95); /* Slightly more opaque */
+  background: #182229; /* Solid background */
   color: #8696a0;
-  padding: 6px 16px;
+  padding: 7px 18px;
   border-radius: 999px;
-  font-size: 0.75rem;
-  font-weight: 500;
+  font-size: 0.78rem;
+  font-weight: 600;
   text-transform: uppercase;
-  letter-spacing: 0.5px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  backdrop-filter: blur(8px);
+  letter-spacing: 0.6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  backdrop-filter: blur(12px);
 }
 
 

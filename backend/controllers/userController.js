@@ -127,7 +127,14 @@ const updateProfile = async (req, res) => {
 
 const getMe = async (req, res) => {
     try {
-        const user = await User.findById(req.user._id);
+        let token = req.cookies.token;
+
+        if (!token) {
+            return res.status(200).json({ success: false, message: 'Unauthorized' });
+        }
+
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
+        const user = await User.findById(decoded.id).select('-password');
 
         if (user) {
             res.json({
@@ -141,7 +148,7 @@ const getMe = async (req, res) => {
             return res.status(200).json({ success: false, message: 'User not found' });
         }
     } catch (error) {
-        res.status(200).json({ success: false, message: error.message });
+        res.status(200).json({ success: false, message: 'Unauthorized' });
     }
 };
 

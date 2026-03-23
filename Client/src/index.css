@@ -721,6 +721,13 @@ body {
   scrollbar-color: rgba(255,255,255,0.1) transparent;
 }
 
+.message-date-group {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+  position: relative;
+}
+
 /* ── Date header ───────────────────────────── */
 .date-header-row {
   display: flex;
@@ -728,7 +735,7 @@ body {
   align-items: center;
   margin: 12px 0;
   position: sticky;
-  top: 0;
+  top: 10px; /* Small gap from the top of the chat area or previous header */
   z-index: 20;
 }
 

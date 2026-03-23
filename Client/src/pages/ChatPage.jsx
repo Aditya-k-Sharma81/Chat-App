@@ -336,24 +336,30 @@ export default function ChatPage() {
                   <p>No messages yet. Say hello!</p>
                 </div>
               ) : (
-                messages.map((m, index) => {
-                  const currentDate = new Date(m.createdAt).toDateString();
-                  const prevDate = index > 0 ? new Date(messages[index - 1].createdAt).toDateString() : null;
-                  const showDateHeader = currentDate !== prevDate;
+                // Group messages by date
+                (() => {
+                  const groupedMessages = messages.reduce((groups, message) => {
+                    const date = new Date(message.createdAt).toDateString();
+                    if (!groups[date]) {
+                      groups[date] = [];
+                    }
+                    groups[date].push(message);
+                    return groups;
+                  }, {});
 
-                  return (
-                    <div key={m._id} style={{ display: 'contents' }}>
-                      {showDateHeader && (
-                        <div className="date-header-row">
-                          <div className="date-header-pill">
-                            {formatChatHeaderDate(m.createdAt)}
-                          </div>
+                  return Object.entries(groupedMessages).map(([date, dateMessages]) => (
+                    <div key={date} className="message-date-group">
+                      <div className="date-header-row">
+                        <div className="date-header-pill">
+                          {formatChatHeaderDate(dateMessages[0].createdAt)}
                         </div>
-                      )}
-                      <ChatMessage message={m} selectedUser={selectedUser} />
+                      </div>
+                      {dateMessages.map((m) => (
+                        <ChatMessage key={m._id} message={m} selectedUser={selectedUser} />
+                      ))}
                     </div>
-                  );
-                })
+                  ));
+                })()
               )}
               <div ref={messagesEndRef} />
             </div>

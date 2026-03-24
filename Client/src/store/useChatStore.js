@@ -9,6 +9,7 @@ export const useChatStore = create((set, get) => ({
   selectedUser: null,
   isUsersLoading: false,
   isMessagesLoading: false,
+  isSendingMessage: false,
   previewImage: null,
 
   setPreviewImage: (image) => set({ previewImage: image }),
@@ -59,6 +60,7 @@ export const useChatStore = create((set, get) => ({
 
   sendMessage: async (messageData) => {
     const { selectedUser, messages } = get();
+    set({ isSendingMessage: true });
     try {
       const res = await fetch(`${BASE_URL}/api/messages/send/${selectedUser._id}`, {
         method: "POST",
@@ -72,6 +74,8 @@ export const useChatStore = create((set, get) => ({
       }
     } catch (error) {
       console.log("Error in sendMessage:", error);
+    } finally {
+      set({ isSendingMessage: false });
     }
   },
   

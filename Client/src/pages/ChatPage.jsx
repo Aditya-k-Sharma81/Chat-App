@@ -56,6 +56,7 @@ export default function ChatPage() {
     subscribeToMessages,
     unsubscribeFromMessages,
     sendMessage: sendChatMessage,
+    isSendingMessage,
     previewImage,
     setPreviewImage,
   } = useChatStore();
@@ -393,10 +394,14 @@ export default function ChatPage() {
                 />
                 <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" style={{ display: "none" }} onChange={handleMediaSelect} />
                 <button className="icon-btn" onClick={() => fileRef.current?.click()}>📎</button>
-                <button className="send-btn" onClick={handleSendMessage}>
-                  <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                    <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z" />
-                  </svg>
+                <button className="send-btn" onClick={handleSendMessage} disabled={isSendingMessage}>
+                  {isSendingMessage ? (
+                    <div className="btn-spinner" style={{ width: '18px', height: '18px', borderWidth: '2px' }} />
+                  ) : (
+                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                      <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z" />
+                    </svg>
+                  )}
                 </button>
               </div>
             </div>

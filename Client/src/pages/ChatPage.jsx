@@ -375,9 +375,20 @@ export default function ChatPage() {
                   {pendingMedia.map((media, i) => (
                     <div className="img-preview-thumb-wrap" key={i}>
                       {media.type.startsWith("image/") ? (
-                        <img src={media.src} alt="preview" className="img-preview-thumb" />
+                        <img
+                          src={media.src}
+                          alt="preview"
+                          className="img-preview-thumb"
+                          onClick={() => setPreviewImage(media.src)}
+                          style={{ cursor: "pointer" }}
+                        />
                       ) : (
-                        <video src={media.src} className="img-preview-thumb" />
+                        <video
+                          src={media.src}
+                          className="img-preview-thumb"
+                          onClick={() => setPreviewImage(media.src)}
+                          style={{ cursor: "pointer" }}
+                        />
                       )}
                       <button className="img-preview-cancel" onClick={() => cancelMedia(i)}>×</button>
                     </div>
@@ -486,12 +497,14 @@ function ImageModal() {
           ) : (
             <img src={previewImage} alt="Big preview" className="image-modal-img" />
           )}
-          <button className="image-modal-download" onClick={handleDownload} style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
-            <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
-            </svg>
-            Download
-          </button>
+          {!previewImage.startsWith("data:") && (
+            <button className="image-modal-download" onClick={handleDownload} style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
+              <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+              </svg>
+              Download
+            </button>
+          )}
         </div>
       </div>
     </div>

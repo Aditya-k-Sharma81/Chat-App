@@ -5,6 +5,8 @@ import ChatMessage from "./ChatMessage";
 import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { formatChatHeaderDate } from "../utils/dateUtils";
+import CameraModal from "./CameraModal";
+
 
 export function Avatar({ contact, size = 40 }) {
   if (contact.pic) {
@@ -69,6 +71,8 @@ export default function ChatPage() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [pendingMedia, setPendingMedia] = useState([]);
+  const [showCamera, setShowCamera] = useState(false);
+
   
   const menuRef = useRef(null);
   const fileRef = useRef(null);
@@ -187,7 +191,16 @@ export default function ChatPage() {
     e.target.value = "";
   };
 
+  const handleCameraCapture = (dataUrl) => {
+    setPendingMedia((prev) => [...prev, { 
+      src: dataUrl, 
+      name: `camera-${Date.now()}.jpg`, 
+      type: "image/jpeg" 
+    }]);
+  };
+
   const cancelMedia = (index) => {
+
     setPendingMedia((prev) => prev.filter((_, i) => i !== index));
   };
 
@@ -404,7 +417,9 @@ export default function ChatPage() {
                   onKeyDown={handleKey}
                 />
                 <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" style={{ display: "none" }} onChange={handleMediaSelect} />
-                <button className="icon-btn" onClick={() => fileRef.current?.click()}>📎</button>
+                <button className="icon-btn" title="Take a photo" onClick={() => setShowCamera(true)}>📷</button>
+                <button className="icon-btn" title="Attach media" onClick={() => fileRef.current?.click()}>📎</button>
+
                 <button className="send-btn" onClick={handleSendMessage} disabled={isSendingMessage}>
                   {isSendingMessage ? (
                     <div className="btn-spinner" style={{ width: '18px', height: '18px', borderWidth: '2px' }} />
@@ -442,7 +457,14 @@ export default function ChatPage() {
       )}
 
       {previewImage && <ImageModal />}
+      {showCamera && (
+        <CameraModal 
+          onCapture={handleCameraCapture} 
+          onClose={() => setShowCamera(false)} 
+        />
+      )}
     </div>
+
   );
 }
 

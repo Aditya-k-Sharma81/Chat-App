@@ -58,7 +58,7 @@ const getMessages = async (req, res) => {
 
 const sendMessage = async (req, res) => {
   try {
-    const { text, image, images } = req.body;
+    const { text, image, images, video, videos } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
@@ -76,12 +76,27 @@ const sendMessage = async (req, res) => {
       imageUrls = uploadResponses.map((res) => res.secure_url);
     }
 
+    let videoUrl;
+    if (video) {
+        const uploadResponse = await cloudinary.uploader.upload(video, { resource_type: "video" });
+        videoUrl = uploadResponse.secure_url;
+    }
+
+    let videoUrls = [];
+    if (videos && Array.isArray(videos) && videos.length > 0) {
+        const uploadPromises = videos.map((vid) => cloudinary.uploader.upload(vid, { resource_type: "video" }));
+        const uploadResponses = await Promise.all(uploadPromises);
+        videoUrls = uploadResponses.map((res) => res.secure_url);
+    }
+
     const newMessage = new Message({
       senderId,
       receiverId,
       text,
       image: imageUrl,
       images: imageUrls,
+      video: videoUrl,
+      videos: videoUrls,
     });
 
     await newMessage.save();

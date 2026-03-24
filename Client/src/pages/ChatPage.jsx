@@ -67,7 +67,7 @@ export default function ChatPage() {
   const [showInfo, setShowInfo] = useState(true);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
-  const [pendingImages, setPendingImages] = useState([]);
+  const [pendingMedia, setPendingMedia] = useState([]);
   
   const menuRef = useRef(null);
   const fileRef = useRef(null);
@@ -157,33 +157,37 @@ export default function ChatPage() {
     e.preventDefault();
     if (!selectedUser) return;
     const text = input.trim();
-    if (!text && pendingImages.length === 0) return;
+    if (!text && pendingMedia.length === 0) return;
+
+    const images = pendingMedia.filter(m => m.type.startsWith("image/")).map(m => m.src);
+    const videos = pendingMedia.filter(m => m.type.startsWith("video/")).map(m => m.src);
 
     await sendChatMessage({
       text: text,
-      images: pendingImages.map((img) => img.src),
+      images: images,
+      videos: videos,
     });
 
     setInput("");
-    setPendingImages([]);
+    setPendingMedia([]);
     if (fileRef.current) fileRef.current.value = "";
   };
 
-  const handleImageSelect = (e) => {
+  const handleMediaSelect = (e) => {
     const files = Array.from(e.target.files);
     if (!files.length) return;
     files.forEach((file) => {
       const reader = new FileReader();
       reader.onload = (ev) => {
-        setPendingImages((prev) => [...prev, { src: ev.target.result, name: file.name }]);
+        setPendingMedia((prev) => [...prev, { src: ev.target.result, name: file.name, type: file.type }]);
       };
       reader.readAsDataURL(file);
     });
     e.target.value = "";
   };
 
-  const cancelImage = (index) => {
-    setPendingImages((prev) => prev.filter((_, i) => i !== index));
+  const cancelMedia = (index) => {
+    setPendingMedia((prev) => prev.filter((_, i) => i !== index));
   };
 
   const handleKey = (e) => {
@@ -365,12 +369,16 @@ export default function ChatPage() {
             </div>
 
             <div className="chat-input-wrap">
-              {pendingImages.length > 0 && (
+              {pendingMedia.length > 0 && (
                 <div className="img-preview-strip">
-                  {pendingImages.map((img, i) => (
+                  {pendingMedia.map((media, i) => (
                     <div className="img-preview-thumb-wrap" key={i}>
-                      <img src={img.src} alt="preview" className="img-preview-thumb" />
-                      <button className="img-preview-cancel" onClick={() => cancelImage(i)}>×</button>
+                      {media.type.startsWith("image/") ? (
+                        <img src={media.src} alt="preview" className="img-preview-thumb" />
+                      ) : (
+                        <video src={media.src} className="img-preview-thumb" />
+                      )}
+                      <button className="img-preview-cancel" onClick={() => cancelMedia(i)}>×</button>
                     </div>
                   ))}
                 </div>
@@ -383,7 +391,7 @@ export default function ChatPage() {
                   onChange={(e) => setInput(e.target.value)}
                   onKeyDown={handleKey}
                 />
-                <input ref={fileRef} type="file" accept="image/*" className="hidden" style={{ display: "none" }} onChange={handleImageSelect} />
+                <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" style={{ display: "none" }} onChange={handleMediaSelect} />
                 <button className="icon-btn" onClick={() => fileRef.current?.click()}>📎</button>
                 <button className="send-btn" onClick={handleSendMessage}>
                   <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
@@ -468,7 +476,11 @@ function ImageModal() {
           </svg>
         </button>
         <div className="image-modal-content">
-          <img src={previewImage} alt="Big preview" className="image-modal-img" />
+          {previewImage.includes("/video/upload/") || previewImage.includes("data:video/") ? (
+            <video src={previewImage} controls autoPlay className="image-modal-img" />
+          ) : (
+            <img src={previewImage} alt="Big preview" className="image-modal-img" />
+          )}
           <button className="image-modal-download" onClick={handleDownload} style={{ border: 'none', cursor: 'pointer', fontFamily: 'inherit' }}>
             <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />

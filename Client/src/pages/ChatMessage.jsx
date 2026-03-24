@@ -41,7 +41,8 @@ export default function ChatMessage({ message, selectedUser }) {
       const blobUrl = URL.createObjectURL(blob);
       const link = document.createElement("a");
       link.href = blobUrl;
-      link.download = "nexchat-image-" + Date.now() + ".jpg";
+      const extension = url.includes("video") ? "mp4" : "jpg";
+      link.download = `nexchat-media-${Date.now()}.${extension}`;
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
@@ -80,10 +81,51 @@ export default function ChatMessage({ message, selectedUser }) {
     </div>
   );
 
+  const VideoComponent = ({ src, className, style }) => (
+    <div 
+      className="msg-video-container" 
+      style={{ position: "relative", cursor: isDownloaded ? 'pointer' : 'default' }}
+      onClick={() => isDownloaded && setPreviewImage(src)}
+    >
+      <video 
+        src={src} 
+        controls={false}
+        className={`${className} ${!isDownloaded ? 'msg-img-blur' : ''}`} 
+        style={{ ...style, maxWidth: '100%', borderRadius: '12px' }} 
+      />
+      {isDownloaded && (
+        <div className="msg-video-play-overlay">
+          <div className="msg-play-icon-center">
+            <svg width="32" height="32" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z" />
+            </svg>
+          </div>
+        </div>
+      )}
+      {!isDownloaded && (
+        <div className="msg-download-overlay" onClick={(e) => { e.stopPropagation(); handleDownload(src); }}>
+          <div className="msg-download-icon-center">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+            </svg>
+          </div>
+          <span>Download to view</span>
+        </div>
+      )}
+      {isDownloaded && (
+        <button className="msg-download-btn" onClick={(e) => { e.stopPropagation(); handleDownload(src); }}>
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v4" /><polyline points="7 10 12 15 17 10" /><line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+        </button>
+      )}
+    </div>
+  );
+
   return (
     <div className={`msg-row ${fromMe ? "msg-me" : "msg-them"}`}>
       {!fromMe && <Avatar contact={selectedUser} size={28} />}
-      <div className={`msg-bubble ${fromMe ? "bubble-me" : "bubble-them"} ${((message.image || (message.images && message.images.length > 0)) && !message.text) ? "bubble-img" : ""}`}>
+      <div className={`msg-bubble ${fromMe ? "bubble-me" : "bubble-them"} ${((message.image || (message.images && message.images.length > 0) || message.video || (message.videos && message.videos.length > 0)) && !message.text) ? "bubble-img" : ""}`}>
         {fromMe && (
           <div className="msg-menu-wrap" ref={menuRef}>
             <button className="msg-menu-btn" onClick={() => setShowMenu(!showMenu)}>
@@ -100,7 +142,11 @@ export default function ChatMessage({ message, selectedUser }) {
             )}
           </div>
         )}
-        {message.text && <p className="msg-text" style={{ marginBottom: (message.image || (message.images && message.images.length > 0)) ? '8px' : 0 }}>{message.text}</p>}
+        {message.text && (
+          <p className="msg-text" style={{ marginBottom: (message.image || (message.images && message.images.length > 0) || message.video || (message.videos && message.videos.length > 0)) ? '8px' : 0 }}>
+            {message.text}
+          </p>
+        )}
         {message.image && (
           <ImageComponent 
             src={message.image} 
@@ -116,9 +162,26 @@ export default function ChatMessage({ message, selectedUser }) {
             alt="sent" 
             className="msg-image" 
             style={{ 
-              marginBottom: idx === message.images.length - 1 ? 0 : '8px',
+              marginBottom: (idx === message.images.length - 1 && !message.video && (!message.videos || message.videos.length === 0)) ? 0 : '8px',
               maxWidth: '100%',
               borderRadius: '12px'
+            }} 
+          />
+        ))}
+        {message.video && (
+          <VideoComponent 
+            src={message.video} 
+            className="msg-video" 
+            style={{ marginBottom: (message.videos && message.videos.length > 0) ? '8px' : 0 }} 
+          />
+        )}
+        {message.videos && message.videos.map((vid, idx) => (
+          <VideoComponent 
+            key={idx}
+            src={vid} 
+            className="msg-video" 
+            style={{ 
+              marginBottom: idx === message.videos.length - 1 ? 0 : '8px'
             }} 
           />
         ))}

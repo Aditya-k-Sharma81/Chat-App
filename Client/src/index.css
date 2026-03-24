@@ -1126,7 +1126,7 @@ body {
   border: none !important;
 }
 
-.msg-image {
+.msg-image, .msg-video {
   max-width: 220px;
   max-height: 220px;
   width: 100%;
@@ -1137,6 +1137,7 @@ body {
   transition: transform 0.2s ease, box-shadow 0.2s ease;
   box-shadow: 0 4px 16px rgba(0,0,0,0.4);
 }
+.msg-video { cursor: default; }
 .msg-image:hover {
   transform: scale(1.02);
   box-shadow: 0 8px 24px rgba(0,0,0,0.6);
@@ -1148,7 +1149,7 @@ body {
   transition: filter 0.3s ease, transform 0.3s ease;
 }
 
-.msg-img-container {
+.msg-img-container, .msg-video-container {
   position: relative;
   display: inline-block;
   line-height: 0;
@@ -1186,10 +1187,39 @@ body {
   box-shadow: 0 4px 12px rgba(0,0,0,0.3);
 }
 
-.msg-download-overlay span {
+.msg-download-overlay span, .msg-video-play-overlay span {
   font-size: 0.75rem;
   font-weight: 500;
   text-shadow: 0 2px 4px rgba(0,0,0,0.5);
+}
+
+.msg-video-play-overlay {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0,0,0,0.1);
+  pointer-events: none; /* Let the container handle the click */
+  z-index: 5;
+}
+
+.msg-play-icon-center {
+  background: rgba(0,0,0,0.5);
+  border-radius: 50%;
+  padding: 14px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  border: 1px solid rgba(255,255,255,0.2);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+  transition: transform 0.2s ease, background 0.2s ease;
+}
+
+.msg-video-container:hover .msg-play-icon-center {
+  transform: scale(1.1);
+  background: rgba(0,0,0,0.7);
 }
 
 .msg-download-btn {
@@ -1210,7 +1240,8 @@ body {
   z-index: 5;
 }
 
-.msg-img-container:hover .msg-download-btn {
+.msg-img-container:hover .msg-download-btn,
+.msg-video-container:hover .msg-download-btn {
   opacity: 1;
 }
 

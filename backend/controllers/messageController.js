@@ -58,7 +58,7 @@ const getMessages = async (req, res) => {
 
 const sendMessage = async (req, res) => {
   try {
-    const { text, image, images, video, videos } = req.body;
+    const { text, image, images, video, videos, audio } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
@@ -89,6 +89,12 @@ const sendMessage = async (req, res) => {
         videoUrls = uploadResponses.map((res) => res.secure_url);
     }
 
+    let audioUrl;
+    if (audio) {
+        const uploadResponse = await cloudinary.uploader.upload(audio, { resource_type: "video" });
+        audioUrl = uploadResponse.secure_url;
+    }
+
     const newMessage = new Message({
       senderId,
       receiverId,
@@ -97,6 +103,7 @@ const sendMessage = async (req, res) => {
       images: imageUrls,
       video: videoUrl,
       videos: videoUrls,
+      audio: audioUrl,
     });
 
     await newMessage.save();

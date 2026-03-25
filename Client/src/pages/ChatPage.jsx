@@ -72,11 +72,16 @@ export default function ChatPage() {
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [pendingMedia, setPendingMedia] = useState([]);
   const [showCamera, setShowCamera] = useState(false);
+  const [isRecording, setIsRecording] = useState(false);
+  const [recordingTime, setRecordingTime] = useState(0);
+  const [mediaRecorder, setMediaRecorder] = useState(null);
+  const [audioChunks, setAudioChunks] = useState([]);
 
   
   const menuRef = useRef(null);
   const fileRef = useRef(null);
   const messagesEndRef = useRef(null);
+  const recordingInterval = useRef(null);
 
   useEffect(() => {
     getUsers();
@@ -156,6 +161,73 @@ export default function ChatPage() {
         color: "#fff",
       });
     }
+  };
+
+  const startRecording = async () => {
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      const recorder = new MediaRecorder(stream);
+      const chunks = [];
+
+      recorder.ondataavailable = (e) => {
+        if (e.data.size > 0) chunks.push(e.data);
+      };
+
+      recorder.onstop = async () => {
+        const audioBlob = new Blob(chunks, { type: "audio/webm" });
+        const reader = new FileReader();
+        reader.readAsDataURL(audioBlob);
+        reader.onloadend = async () => {
+          const base64Audio = reader.result;
+          await sendChatMessage({
+            audio: base64Audio,
+          });
+        };
+        stream.getTracks().forEach(track => track.stop());
+      };
+
+      setMediaRecorder(recorder);
+      setAudioChunks(chunks);
+      recorder.start();
+      setIsRecording(true);
+      setRecordingTime(0);
+      recordingInterval.current = setInterval(() => {
+        setRecordingTime((prev) => prev + 1);
+      }, 1000);
+    } catch (error) {
+      console.error("Error starting recording:", error);
+      Swal.fire({
+        icon: "error",
+        title: "Microphone Error",
+        text: "Could not access microphone. Please check permissions.",
+        background: "#1e1e2d",
+        color: "#fff",
+      });
+    }
+  };
+
+  const stopRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.stop();
+      setIsRecording(false);
+      clearInterval(recordingInterval.current);
+    }
+  };
+
+  const cancelRecording = () => {
+    if (mediaRecorder && isRecording) {
+      mediaRecorder.onstop = null; // Don't trigger sending
+      mediaRecorder.stop();
+      mediaRecorder.stream.getTracks().forEach(track => track.stop());
+      setIsRecording(false);
+      clearInterval(recordingInterval.current);
+    }
+  };
+
+  const formatTime = (seconds) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
   const handleSendMessage = async (e) => {
@@ -409,26 +481,46 @@ export default function ChatPage() {
                 </div>
               )}
               <div className="chat-input-bar">
-                <input
-                  className="chat-input"
-                  placeholder="Send a message"
-                  value={input}
-                  onChange={(e) => setInput(e.target.value)}
-                  onKeyDown={handleKey}
-                />
-                <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" style={{ display: "none" }} onChange={handleMediaSelect} />
-                <button className="icon-btn" title="Take a photo" onClick={() => setShowCamera(true)}>📷</button>
-                <button className="icon-btn" title="Attach media" onClick={() => fileRef.current?.click()}>📎</button>
+                {isRecording ? (
+                  <div className="recording-ui">
+                    <div className="recording-dot" />
+                    <span className="recording-time">{formatTime(recordingTime)}</span>
+                    <button className="recording-cancel" onClick={cancelRecording}>Cancel</button>
+                    <button className="recording-send" onClick={stopRecording}>
+                      <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                        <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <>
+                    <input
+                      className="chat-input"
+                      placeholder="Send a message"
+                      value={input}
+                      onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={handleKey}
+                    />
+                    <input ref={fileRef} type="file" accept="image/*,video/*" className="hidden" style={{ display: "none" }} onChange={handleMediaSelect} />
+                    <button className="icon-btn" title="Take a photo" onClick={() => setShowCamera(true)}>📷</button>
+                    <button className="icon-btn" title="Attach media" onClick={() => fileRef.current?.click()}>📎</button>
+                    <button className="icon-btn" title="Voice Message" onClick={startRecording}>
+                      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/><line x1="12" y1="19" x2="12" y2="23"/><line x1="8" y1="23" x2="16" y2="23"/>
+                      </svg>
+                    </button>
 
-                <button className="send-btn" onClick={handleSendMessage} disabled={isSendingMessage}>
-                  {isSendingMessage ? (
-                    <div className="btn-spinner" style={{ width: '18px', height: '18px', borderWidth: '2px' }} />
-                  ) : (
-                    <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
-                      <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z" />
-                    </svg>
-                  )}
-                </button>
+                    <button className="send-btn" onClick={handleSendMessage} disabled={isSendingMessage || (!input.trim() && pendingMedia.length === 0)}>
+                      {isSendingMessage ? (
+                        <div className="btn-spinner" style={{ width: '18px', height: '18px', borderWidth: '2px' }} />
+                      ) : (
+                        <svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor">
+                          <path d="M1.101 21.757L23.8 12.028 1.101 2.3l.011 7.912 13.623 1.816-13.623 1.817-.011 7.912z" />
+                        </svg>
+                      )}
+                    </button>
+                  </>
+                )}
               </div>
             </div>
           </>

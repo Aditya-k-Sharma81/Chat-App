@@ -122,10 +122,99 @@ export default function ChatMessage({ message, selectedUser }) {
     </div>
   );
 
+  const AudioComponent = ({ src }) => {
+    const audioRef = useRef(null);
+    const [isPlaying, setIsPlaying] = useState(false);
+    const [currentTime, setCurrentTime] = useState(0);
+    const [duration, setDuration] = useState(0);
+
+    const togglePlay = () => {
+      if (!audioRef.current) return;
+      if (isPlaying) {
+        audioRef.current.pause();
+      } else {
+        audioRef.current.play();
+      }
+      setIsPlaying(!isPlaying);
+    };
+
+    const onTimeUpdate = () => {
+      setCurrentTime(audioRef.current.currentTime);
+    };
+
+    const onLoadedMetadata = () => {
+      setDuration(audioRef.current.duration);
+    };
+
+    const onEnded = () => {
+      setIsPlaying(false);
+      setCurrentTime(0);
+    };
+
+    const formatAudioTime = (time) => {
+      if (isNaN(time) || !isFinite(time)) return "0:00";
+      const mins = Math.floor(time / 60);
+      const secs = Math.floor(time % 60);
+      return `${mins}:${secs.toString().padStart(2, "0")}`;
+    };
+
+    const handleProgressChange = (e) => {
+      if (!audioRef.current || !duration) return;
+      const rect = e.currentTarget.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const pct = Math.max(0, Math.min(1, x / rect.width));
+      const newTime = pct * duration;
+      audioRef.current.currentTime = newTime;
+      setCurrentTime(newTime);
+    };
+
+    return (
+      <div className="msg-audio-container" onClick={(e) => e.stopPropagation()}>
+        <audio
+          ref={audioRef}
+          src={src}
+          onTimeUpdate={onTimeUpdate}
+          onLoadedMetadata={onLoadedMetadata}
+          onEnded={onEnded}
+          style={{ display: "none" }}
+        />
+        <button className="audio-play-btn" onClick={togglePlay}>
+          {isPlaying ? (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M6 19h4V5H6v14zm8-14v14h4V5h-4z"/>
+            </svg>
+          ) : (
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M8 5v14l11-7z"/>
+            </svg>
+          )}
+        </button>
+        <div className="audio-progress-wrap">
+          <div className="audio-progress-bar" onClick={handleProgressChange}>
+            <div 
+              className="audio-progress-fill" 
+              style={{ width: `${(currentTime / duration) * 100 || 0}%` }}
+            >
+              <div className="audio-thumb" />
+            </div>
+          </div>
+          <div className="audio-meta">
+            <span className="audio-time">{formatAudioTime(isPlaying ? currentTime : duration)}</span>
+            <div className="audio-mic-icon">
+               <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                 <path d="M12 1a3 3 0 0 0-3 3v8a3 3 0 0 0 6 0V4a3 3 0 0 0-3-3z"/><path d="M19 10v2a7 7 0 0 1-14 0v-2"/>
+               </svg>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  };
+
   return (
     <div className={`msg-row ${fromMe ? "msg-me" : "msg-them"}`}>
       {!fromMe && <Avatar contact={selectedUser} size={28} />}
-      <div className={`msg-bubble ${fromMe ? "bubble-me" : "bubble-them"} ${((message.image || (message.images && message.images.length > 0) || message.video || (message.videos && message.videos.length > 0)) && !message.text) ? "bubble-img" : ""}`}>
+      <div className={`msg-bubble ${fromMe ? "bubble-me" : "bubble-them"} ${((message.audio || message.image || (message.images && message.images.length > 0) || message.video || (message.videos && message.videos.length > 0)) && !message.text) ? "bubble-img" : ""}`}>
         {fromMe && (
           <div className="msg-menu-wrap" ref={menuRef}>
             <button className="msg-menu-btn" onClick={() => setShowMenu(!showMenu)}>
@@ -148,9 +237,12 @@ export default function ChatMessage({ message, selectedUser }) {
           </div>
         )}
         {message.text && (
-          <p className="msg-text" style={{ marginBottom: (message.image || (message.images && message.images.length > 0) || message.video || (message.videos && message.videos.length > 0)) ? '8px' : 0 }}>
+          <p className="msg-text" style={{ marginBottom: (message.audio || message.image || (message.images && message.images.length > 0) || message.video || (message.videos && message.videos.length > 0)) ? '8px' : 0 }}>
             {message.text}
           </p>
+        )}
+        {message.audio && (
+          <AudioComponent src={message.audio} />
         )}
         {message.image && (
           <ImageComponent

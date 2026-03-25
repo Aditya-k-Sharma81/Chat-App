@@ -28,6 +28,9 @@ const messageSchema = new mongoose.Schema({
         type: [String],
         default: [],
     },
+    audio: {
+        type: String,
+    },
     isSeen: {
         type: Boolean,
         default: false,

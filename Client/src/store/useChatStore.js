@@ -6,8 +6,11 @@ const BASE_URL = "http://localhost:5000";
 export const useChatStore = create((set, get) => ({
   messages: [],
   users: [],
+  groups: [],
   selectedUser: null,
+  selectedGroup: null,
   isUsersLoading: false,
+  isGroupsLoading: false,
   isMessagesLoading: false,
   isSendingMessage: false,
   previewImage: null,
@@ -41,10 +44,48 @@ export const useChatStore = create((set, get) => ({
     }
   },
 
-  getMessages: async (userId) => {
+  getGroups: async () => {
+    set({ isGroupsLoading: true });
+    try {
+      const res = await fetch(`${BASE_URL}/api/groups`, {
+        credentials: "include",
+      });
+      if (res.ok) {
+        const data = await res.json();
+        set({ groups: data });
+      }
+    } catch (error) {
+      console.log("Error in getGroups:", error);
+    } finally {
+      set({ isGroupsLoading: false });
+    }
+  },
+
+  createGroup: async (groupData) => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/groups/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(groupData),
+        credentials: "include",
+      });
+      if (res.ok) {
+        const newGroup = await res.json();
+        set({ groups: [newGroup, ...get().groups] });
+        return { success: true, group: newGroup };
+      }
+      return { success: false };
+    } catch (error) {
+      console.log("Error in createGroup:", error);
+      return { success: false };
+    }
+  },
+
+  getMessages: async (id, isGroup = false) => {
     set({ isMessagesLoading: true });
     try {
-      const res = await fetch(`${BASE_URL}/api/messages/${userId}`, {
+      const url = isGroup ? `${BASE_URL}/api/groups/${id}` : `${BASE_URL}/api/messages/${id}`;
+      const res = await fetch(url, {
         credentials: "include",
       });
       if (res.ok) {
@@ -59,13 +100,16 @@ export const useChatStore = create((set, get) => ({
   },
 
   sendMessage: async (messageData) => {
-    const { selectedUser, messages } = get();
+    const { selectedUser, selectedGroup, messages } = get();
     set({ isSendingMessage: true });
     try {
-      const res = await fetch(`${BASE_URL}/api/messages/send/${selectedUser._id}`, {
+      const id = selectedGroup ? selectedGroup._id : selectedUser._id;
+      const body = selectedGroup ? { ...messageData, groupId: id } : messageData;
+      
+      const res = await fetch(`${BASE_URL}/api/messages/send/${selectedGroup ? id : id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(messageData),
+        body: JSON.stringify(body),
         credentials: "include",
       });
       if (res.ok) {
@@ -110,24 +154,39 @@ export const useChatStore = create((set, get) => ({
     const socket = useAuthStore.getState().socket;
     if (!socket) return;
 
+    // Join all group rooms
+    const { groups } = get();
+    groups.forEach(group => {
+      socket.emit("joinGroup", group._id);
+    });
+
     socket.on("newMessage", (newMessage) => {
-      const { selectedUser, messages, users } = get();
-      const isMessageFromSelectedUser = selectedUser && newMessage.senderId === selectedUser._id;
+      const { selectedUser, selectedGroup, messages, users } = get();
       
-      if (isMessageFromSelectedUser) {
+      const isMessageForSelectedChat = 
+        (selectedUser && newMessage.senderId === selectedUser._id && !newMessage.groupId) ||
+        (selectedGroup && newMessage.groupId === selectedGroup._id);
+      
+      if (isMessageForSelectedChat) {
         set({
           messages: [...messages, newMessage],
         });
-        get().markAsSeen(newMessage.senderId);
+        if (!newMessage.groupId && newMessage.senderId) {
+            get().markAsSeen(newMessage.senderId);
+        }
       } else {
-        // Increment unread count for the sender
-        set({
-          users: users.map(u => 
-            u._id === newMessage.senderId 
-              ? { ...u, unreadCount: (u.unreadCount || 0) + 1 } 
-              : u
-          )
-        });
+        // Handle unread counts for users or groups
+        if (newMessage.groupId) {
+            // Update group last message or unread count if implemented
+        } else {
+            set({
+              users: users.map(u => 
+                u._id === newMessage.senderId 
+                  ? { ...u, unreadCount: (u.unreadCount || 0) + 1 } 
+                  : u
+              )
+            });
+        }
       }
     });
 
@@ -151,13 +210,20 @@ export const useChatStore = create((set, get) => ({
 
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
+    if (!socket) return;
+    
+    const { groups } = get();
+    groups.forEach(group => {
+      socket.emit("leaveGroup", group._id);
+    });
+
     socket.off("newMessage");
     socket.off("messageDeleted");
     socket.off("messagesRead");
   },
 
   setSelectedUser: (selectedUser) => {
-    set({ selectedUser });
+    set({ selectedUser, selectedGroup: null });
     if (selectedUser) {
       set({
         users: get().users.map(u => 
@@ -165,5 +231,9 @@ export const useChatStore = create((set, get) => ({
         )
       });
     }
+  },
+
+  setSelectedGroup: (selectedGroup) => {
+    set({ selectedGroup, selectedUser: null });
   },
 }));

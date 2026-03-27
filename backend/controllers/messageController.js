@@ -58,13 +58,16 @@ const getMessages = async (req, res) => {
 
 const sendMessage = async (req, res) => {
   try {
-    const { text, image, images, video, videos, audio } = req.body;
+    const { text, image, images, video, videos, audio, groupId } = req.body;
     const { id: receiverId } = req.params;
     const senderId = req.user._id;
 
+    if (!receiverId && !groupId) {
+      return res.status(400).json({ error: "Receiver ID or Group ID is required" });
+    }
+
     let imageUrl;
     if (image) {
-      // Upload base64 image to cloudinary
       const uploadResponse = await cloudinary.uploader.upload(image);
       imageUrl = uploadResponse.secure_url;
     }
@@ -97,7 +100,8 @@ const sendMessage = async (req, res) => {
 
     const newMessage = new Message({
       senderId,
-      receiverId,
+      receiverId: groupId ? undefined : receiverId,
+      groupId: groupId || undefined,
       text,
       image: imageUrl,
       images: imageUrls,
@@ -108,10 +112,22 @@ const sendMessage = async (req, res) => {
 
     await newMessage.save();
 
+    // Update last message in Group or Conversation (if implemented)
+    if (groupId) {
+      const Group = require("../models/groupModel");
+      await Group.findByIdAndUpdate(groupId, { lastMessage: newMessage._id });
+    }
+
     const { getReceiverSocketId, io } = require("../lib/socket");
-    const receiverSocketId = getReceiverSocketId(receiverId);
-    if (receiverSocketId) {
-      io.to(receiverSocketId).emit("newMessage", newMessage);
+    
+    if (groupId) {
+      // Send to all members in the group room
+      io.to(groupId).emit("newMessage", newMessage);
+    } else {
+      const receiverSocketId = getReceiverSocketId(receiverId);
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit("newMessage", newMessage);
+      }
     }
 
     res.status(201).json(newMessage);

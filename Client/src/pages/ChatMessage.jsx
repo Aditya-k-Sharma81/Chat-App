@@ -3,10 +3,15 @@ import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { Avatar } from "./ChatPage";
 
-export default function ChatMessage({ message, selectedUser }) {
+export default function ChatMessage({ message, selectedUser, isGroup }) {
   const { authUser } = useAuthStore();
   const { deleteMessage, setPreviewImage } = useChatStore();
-  const fromMe = message.senderId === authUser._id;
+  
+  // Handle case where senderId might be populated (object) or just ID (string)
+  const sender = typeof message.senderId === 'object' ? message.senderId : null;
+  const senderId = sender ? sender._id : message.senderId;
+  const fromMe = senderId === authUser._id;
+
   const [showMenu, setShowMenu] = useState(false);
   const [isDownloaded, setIsDownloaded] = useState(() => {
     if (fromMe) return true;
@@ -213,8 +218,13 @@ export default function ChatMessage({ message, selectedUser }) {
 
   return (
     <div className={`msg-row ${fromMe ? "msg-me" : "msg-them"}`}>
-      {!fromMe && <Avatar contact={selectedUser} size={28} />}
+      {!fromMe && <Avatar contact={sender || selectedUser} size={28} />}
       <div className={`msg-bubble ${fromMe ? "bubble-me" : "bubble-them"} ${((message.audio || message.image || (message.images && message.images.length > 0) || message.video || (message.videos && message.videos.length > 0)) && !message.text) ? "bubble-img" : ""}`}>
+        {isGroup && sender && (
+          <span className="text-[10px] font-bold text-[#7c6cfb] block mb-1">
+            {fromMe ? "You" : sender.name}
+          </span>
+        )}
         {fromMe && (
           <div className="msg-menu-wrap" ref={menuRef}>
             <button className="msg-menu-btn" onClick={() => setShowMenu(!showMenu)}>

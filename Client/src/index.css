@@ -581,6 +581,46 @@ body {
   scrollbar-color: rgba(124,108,251,0.3) transparent;
 }
 
+/* ── Group Add Button ─────────────────────── */
+.group-add-btn {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: calc(100% - 28px);
+  margin: 4px 14px 12px;
+  padding: 10px 14px;
+  background: linear-gradient(135deg, #00a884, #008069);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+  color: #fff;
+  font-size: 0.85rem;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  box-shadow: 0 4px 15px rgba(0, 168, 132, 0.2);
+}
+
+.group-add-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 168, 132, 0.35);
+  background: linear-gradient(135deg, #00c99e, #00a884);
+}
+
+.group-add-icon-wrap {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 28px;
+  background: rgba(255, 255, 255, 0.2);
+  border-radius: 8px;
+  transition: transform 0.3s ease;
+}
+
+.group-add-btn:hover .group-add-icon-wrap {
+  transform: rotate(90deg);
+}
+
 .contact-item {
   display: flex;
   align-items: center;

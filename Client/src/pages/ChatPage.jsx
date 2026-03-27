@@ -6,30 +6,39 @@ import { useChatStore } from "../store/useChatStore";
 import { useAuthStore } from "../store/useAuthStore";
 import { formatChatHeaderDate } from "../utils/dateUtils";
 import CameraModal from "./CameraModal";
+import CreateGroupModal from "./CreateGroupModal";
 
 
 export function Avatar({ contact, size = 40 }) {
-  if (contact.pic) {
+  const isGroup = !!contact.groupName;
+  const pic = isGroup ? contact.groupIcon : contact.pic;
+  const name = isGroup ? contact.groupName : contact.name;
+  const initials = isGroup 
+    ? contact.groupName.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
+    : contact.initials;
+
+  if (pic) {
     return (
       <img
-        src={contact.pic}
-        alt={contact.name}
+        src={pic}
+        alt={name}
         style={{
           width: size, height: size, borderRadius: "50%",
           objectFit: "cover", flexShrink: 0,
-          border: "2px solid rgba(124,108,251,0.5)",
+          border: isGroup ? "2px solid rgba(0, 168, 132, 0.5)" : "2px solid rgba(124,108,251,0.5)",
         }}
       />
     );
   }
+  const color = isGroup ? "#00a884" : contact.color;
   return (
     <div
       style={{
         width: size,
         height: size,
         borderRadius: "50%",
-        background: `linear-gradient(135deg, ${contact.color}cc, ${contact.color}55)`,
-        border: `2px solid ${contact.color}55`,
+        background: `linear-gradient(135deg, ${color}cc, ${color}55)`,
+        border: `2px solid ${color}55`,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -40,7 +49,7 @@ export function Avatar({ contact, size = 40 }) {
         letterSpacing: "0.5px",
       }}
     >
-      {contact.initials}
+      {initials}
     </div>
   );
 }
@@ -49,12 +58,17 @@ export default function ChatPage() {
   const {
     messages,
     users,
+    groups,
     selectedUser,
+    selectedGroup,
     isUsersLoading,
+    isGroupsLoading,
     isMessagesLoading,
     getUsers,
+    getGroups,
     getMessages,
     setSelectedUser,
+    setSelectedGroup,
     subscribeToMessages,
     unsubscribeFromMessages,
     sendMessage: sendChatMessage,
@@ -78,6 +92,8 @@ export default function ChatPage() {
   const [audioChunks, setAudioChunks] = useState([]);
 
   
+  const [showCreateGroup, setShowCreateGroup] = useState(false);
+  
   const menuRef = useRef(null);
   const fileRef = useRef(null);
   const messagesEndRef = useRef(null);
@@ -85,18 +101,21 @@ export default function ChatPage() {
 
   useEffect(() => {
     getUsers();
-  }, [getUsers]);
+    getGroups();
+  }, [getUsers, getGroups]);
 
   useEffect(() => {
     subscribeToMessages();
     return () => unsubscribeFromMessages();
-  }, [subscribeToMessages, unsubscribeFromMessages]);
+  }, [subscribeToMessages, unsubscribeFromMessages, groups]); // Added groups to deps to rejoin rooms on new group
 
   useEffect(() => {
     if (selectedUser) {
-      getMessages(selectedUser._id);
+      getMessages(selectedUser._id, false);
+    } else if (selectedGroup) {
+      getMessages(selectedGroup._id, true);
     }
-  }, [selectedUser, getMessages]);
+  }, [selectedUser, selectedGroup, getMessages]);
 
   useEffect(() => {
     if (messagesEndRef.current && messages) {
@@ -232,7 +251,7 @@ export default function ChatPage() {
 
   const handleSendMessage = async (e) => {
     e.preventDefault();
-    if (!selectedUser) return;
+    if (!selectedUser && !selectedGroup) return;
     const text = input.trim();
     if (!text && pendingMedia.length === 0) return;
 
@@ -356,13 +375,52 @@ export default function ChatPage() {
         <div className="sidebar-search">
           <input
             className="search-input"
-            placeholder="Search user..."
+            placeholder="Search..."
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
         </div>
 
+        <button 
+          className="group-add-btn"
+          title="Create New Group"
+          onClick={() => setShowCreateGroup(true)}
+        >
+          <div className="group-add-icon-wrap">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M16 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="8.5" cy="7" r="4"/><line x1="20" y1="8" x2="20" y2="14"/><line x1="17" y1="11" x2="23" y2="11"/>
+            </svg>
+          </div>
+          <span>Create New Group</span>
+        </button>
+
         <div className="contact-list">
+          {/* Groups Section */}
+          {groups.length > 0 && (
+            <div className="px-4 py-2 text-xs font-bold text-gray-500 uppercase tracking-wider">Groups</div>
+          )}
+          {groups
+            .filter(g => g.groupName.toLowerCase().includes(search.toLowerCase()))
+            .map((g) => (
+            <button
+              key={g._id}
+              className={`contact-item ${selectedGroup?._id === g._id ? "contact-active" : ""}`}
+              onClick={() => setSelectedGroup(g)}
+            >
+              <div className="contact-avatar-wrap">
+                <Avatar contact={g} size={42} />
+              </div>
+              <div className="contact-info">
+                <span className="contact-name">{g.groupName}</span>
+                <span className="contact-status text-xs truncate">
+                  {g.members.length} members
+                </span>
+              </div>
+            </button>
+          ))}
+
+          {/* Users Section */}
+          <div className="px-4 py-2 mt-2 text-xs font-bold text-gray-500 uppercase tracking-wider">Personal</div>
           {filtered.map((c) => (
             <button
               key={c._id}
@@ -389,24 +447,26 @@ export default function ChatPage() {
 
       {/* Main Chat Area */}
       <main className="chat-main">
-        {!selectedUser ? (
+        {!selectedUser && !selectedGroup ? (
           <div className="flex flex-col items-center justify-center h-full text-gray-500 gap-4">
              <div className="text-6xl">👋</div>
-             <p className="text-xl font-medium">Select a user to start chatting</p>
+             <p className="text-xl font-medium">Select a chat to start messaging</p>
           </div>
         ) : (
           <>
             <div className="chat-header">
               <div className="chat-header-left">
-                <button className="back-btn" onClick={() => setSelectedUser(null)}>
+                <button className="back-btn" onClick={() => { setSelectedUser(null); setSelectedGroup(null); }}>
                   <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round">
                     <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
                   </svg>
                 </button>
-                <Avatar contact={selectedUser} size={38} />
+                <Avatar contact={selectedUser || selectedGroup} size={38} />
                 <div>
-                  <p className="chat-header-name">{selectedUser.name}</p>
-                  <p className={`chat-header-status ${getStatus(selectedUser._id) === "Online" ? "status-online" : ""}`}>{getStatus(selectedUser._id)}</p>
+                  <p className="chat-header-name">{(selectedUser || selectedGroup).name || (selectedUser || selectedGroup).groupName}</p>
+                  <p className={`chat-header-status ${selectedUser && getStatus(selectedUser._id) === "Online" ? "status-online" : ""}`}>
+                    {selectedUser ? getStatus(selectedUser._id) : `${selectedGroup.members.length} members`}
+                  </p>
                 </div>
               </div>
               <button className="icon-btn" onClick={() => setShowInfo(!showInfo)}>
@@ -445,7 +505,7 @@ export default function ChatPage() {
                         </div>
                       </div>
                       {dateMessages.map((m) => (
-                        <ChatMessage key={m._id} message={m} selectedUser={selectedUser} />
+                        <ChatMessage key={m._id} message={m} selectedUser={selectedUser || selectedGroup} isGroup={!!selectedGroup} />
                       ))}
                     </div>
                   ));
@@ -528,13 +588,33 @@ export default function ChatPage() {
       </main>
 
       {/* Right Panel */}
-      {showInfo && selectedUser && (
+      {showInfo && (selectedUser || selectedGroup) && (
         <aside className="chat-panel">
           <div className="panel-avatar">
-             <Avatar contact={selectedUser} size={80} />
+             <Avatar contact={selectedUser || selectedGroup} size={80} />
           </div>
-          <p className="panel-name">{selectedUser.name}</p>
-          <p className="panel-bio">{selectedUser.bio}</p>
+          <p className="panel-name">{(selectedUser || selectedGroup).name || (selectedUser || selectedGroup).groupName}</p>
+          <p className="panel-bio">{(selectedUser || selectedGroup).bio || "Group Chat"}</p>
+          
+          {selectedGroup && (
+            <div className="mt-6 w-full">
+              <p className="px-6 text-xs font-bold text-gray-500 uppercase tracking-wider mb-2">Members</p>
+              <div className="max-h-60 overflow-y-auto px-4 space-y-2">
+                {selectedGroup.members.map(member => (
+                  <div key={member._id} className="flex items-center gap-3 p-2 rounded-lg hover:bg-white/5 transition-colors">
+                    <Avatar contact={member} size={30} />
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-white truncate">
+                        {member._id === authUser._id ? "You" : member.name}
+                      </p>
+                      <p className="text-[10px] text-gray-500">{member._id === selectedGroup?.admin?._id ? "Admin" : member.email}</p>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            </div>
+          )}
+          
           <div className="panel-divider" />
           <button className="logout-btn" onClick={handleLogout}>Logout</button>
         </aside>
@@ -546,6 +626,10 @@ export default function ChatPage() {
           onSave={handleUpdateProfile}
           onClose={() => setShowEditProfile(false)}
         />
+      )}
+
+      {showCreateGroup && (
+        <CreateGroupModal onClose={() => setShowCreateGroup(false)} />
       )}
 
       {previewImage && <ImageModal />}

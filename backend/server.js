@@ -31,6 +31,7 @@ app.use(cors({
 // Routes
 app.use('/api/user', require('./routes/userRoutes'));
 app.use('/api/messages', require('./routes/messageRoutes'));
+app.use('/api/groups', require('./routes/groupRoutes'));
 
 app.get('/', (req, res) => {
     res.send('API is running...');

@@ -9,7 +9,12 @@ const messageSchema = new mongoose.Schema({
     receiverId: {
         type: mongoose.Schema.Types.ObjectId,
         ref: "User",
-        required: true,
+        required: false, // Made optional for group messages
+    },
+    groupId: {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Group",
+        required: false, // Required only for group messages
     },
     text: {
         type: String,

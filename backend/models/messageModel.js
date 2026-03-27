@@ -40,6 +40,11 @@ const messageSchema = new mongoose.Schema({
         type: Boolean,
         default: false,
     },
+    messageType: {
+        type: String,
+        enum: ["text", "system"],
+        default: "text",
+    },
 }, { timestamps: true });
 
 const Message = mongoose.model("Message", messageSchema);

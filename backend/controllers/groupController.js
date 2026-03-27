@@ -30,6 +30,15 @@ const createGroup = async (req, res) => {
 
     await newGroup.save();
 
+    // Create system message
+    const systemMessage = new Message({
+      senderId: admin,
+      groupId: newGroup._id,
+      text: `${req.user.name} created the group "${groupName}"`,
+      messageType: "system",
+    });
+    await systemMessage.save();
+
     const fullGroup = await Group.findById(newGroup._id)
       .populate("members", "-password")
       .populate("admin", "-password");
@@ -105,6 +114,19 @@ const updateGroup = async (req, res) => {
       .populate("members", "-password")
       .populate("admin", "-password");
 
+    // Create system message for name change
+    if (groupName && groupName !== group.groupName) {
+        const systemMessage = new Message({
+          senderId: userId,
+          groupId: groupId,
+          text: `${req.user.name} changed the group name to "${groupName}"`,
+          messageType: "system",
+        });
+        await systemMessage.save();
+        const { io } = require("../lib/socket");
+        io.to(groupId).emit("newMessage", systemMessage);
+    }
+
     res.status(200).json(updatedGroup);
   } catch (error) {
     console.error("Error in updateGroup: ", error.message);
@@ -112,4 +134,82 @@ const updateGroup = async (req, res) => {
   }
 };
 
-module.exports = { createGroup, getGroups, getGroupMessages, updateGroup };
+const deleteGroup = async (req, res) => {
+  try {
+    const { id: groupId } = req.params;
+    const userId = req.user._id;
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    if (group.admin.toString() !== userId.toString()) {
+      return res.status(403).json({ error: "Only admin can delete the group" });
+    }
+
+    // Delete all messages in the group
+    await Message.deleteMany({ groupId });
+
+    // Delete the group
+    await Group.findByIdAndDelete(groupId);
+
+    res.status(200).json({ message: "Group deleted successfully" });
+  } catch (error) {
+    console.error("Error in deleteGroup: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+const leaveGroup = async (req, res) => {
+  try {
+    const { id: groupId } = req.params;
+    const userId = req.user._id;
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    // Remove user from members
+    group.members = group.members.filter((m) => m.toString() !== userId.toString());
+
+    // If no members left, delete the group
+    if (group.members.length === 0) {
+      await Message.deleteMany({ groupId });
+      await Group.findByIdAndDelete(groupId);
+      return res.status(200).json({ message: "Group left and deleted (last member)" });
+    }
+
+    // If leaving user was admin, assign a new admin
+    if (group.admin.toString() === userId.toString()) {
+      group.admin = group.members[0]; // Promote the next member
+    }
+
+    await group.save();
+
+    // Create system message
+    const systemMessage = new Message({
+      senderId: userId,
+      groupId: groupId,
+      text: `${req.user.name} left the group`,
+      messageType: "system",
+    });
+    await systemMessage.save();
+    
+    // Emit via socket
+    const { io } = require("../lib/socket");
+    io.to(groupId).emit("newMessage", systemMessage);
+
+    const fullGroup = await Group.findById(groupId)
+      .populate("members", "-password")
+      .populate("admin", "-password");
+
+    res.status(200).json(fullGroup);
+  } catch (error) {
+    console.error("Error in leaveGroup: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+module.exports = { createGroup, getGroups, getGroupMessages, updateGroup, deleteGroup, leaveGroup };

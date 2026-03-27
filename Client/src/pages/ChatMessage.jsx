@@ -216,6 +216,16 @@ export default function ChatMessage({ message, selectedUser, isGroup }) {
     );
   };
 
+  if (message.messageType === "system") {
+    return (
+      <div className="flex justify-center my-6 w-full">
+        <span className="bg-[#202c33] text-[#8696a0] px-4 py-1.5 rounded-lg text-[11px] font-medium shadow-sm border border-white/5">
+          {message.text}
+        </span>
+      </div>
+    );
+  }
+
   return (
     <div className={`msg-row ${fromMe ? "msg-me" : "msg-them"}`}>
       {!fromMe && <Avatar contact={sender || selectedUser} size={28} />}

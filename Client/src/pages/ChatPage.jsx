@@ -336,6 +336,66 @@ export default function ChatPage() {
     );
   }
 
+  const handleDeleteGroup = async () => {
+    const result = await Swal.fire({
+      title: "Delete Group?",
+      text: "This will permanently remove the group and all its messages for everyone.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#334155",
+      confirmButtonText: "Yes, delete it!",
+      background: "#1e1e2d",
+      color: "#fff",
+    });
+
+    if (result.isConfirmed) {
+      const { success } = await useChatStore.getState().deleteGroup(selectedGroup._id);
+      if (success) {
+        Swal.fire({
+           title: "Deleted!",
+           text: "The group has been removed.",
+           icon: "success",
+           background: "#1e1e2d",
+           color: "#fff",
+           timer: 1500,
+           showConfirmButton: false
+        });
+        setShowInfo(false);
+      }
+    }
+  };
+
+  const handleLeaveGroup = async () => {
+    const result = await Swal.fire({
+      title: "Leave Group?",
+      text: "You will no longer be able to send or receive messages in this group.",
+      icon: "warning",
+      showCancelButton: true,
+      confirmButtonColor: "#ef4444",
+      cancelButtonColor: "#334155",
+      confirmButtonText: "Yes, leave!",
+      background: "#1e1e2d",
+      color: "#fff",
+    });
+
+    if (result.isConfirmed) {
+      const { success } = await useChatStore.getState().leaveGroup(selectedGroup._id);
+      if (success) {
+         Swal.fire({
+           title: "Left Group",
+           text: "You have left the group successfully.",
+           icon: "success",
+           background: "#1e1e2d",
+           color: "#fff",
+           timer: 1500,
+           showConfirmButton: false
+        });
+        setShowInfo(false);
+      }
+    }
+  };
+
   return (
     <div className={`chat-root ${(selectedUser || selectedGroup) ? "user-selected" : ""}`}>
       {/* Sidebar */}
@@ -657,7 +717,33 @@ export default function ChatPage() {
             </div>
           )}
           
-          <div className="panel-divider" />
+          <div className="mt-8 w-full px-4 pb-4 flex flex-col gap-3">
+            {selectedGroup && selectedGroup.admin._id === authUser._id && (
+              <button 
+                onClick={handleDeleteGroup}
+                className="w-full py-3 bg-red-500/10 hover:bg-red-500/20 text-red-500 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all border border-red-500/20 shadow-lg shadow-red-500/5 hover:scale-[1.02] active:scale-[0.98]"
+              >
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M3 6h18m-2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2" />
+                </svg>
+                Delete Group
+              </button>
+            )}
+
+            {selectedGroup && (
+               <button 
+                onClick={handleLeaveGroup}
+                className="w-full py-3 bg-gray-500/10 hover:bg-gray-500/20 text-gray-400 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all border border-gray-500/20 hover:scale-[1.02] active:scale-[0.98]"
+               >
+                  <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                    <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4m7 14l5-5-5-5m5 5H9" />
+                  </svg>
+                  Exit Group
+               </button>
+            )}
+          </div>
+
+          <div className="panel-divider opacity-30" />
           <button className="logout-btn" onClick={handleLogout}>Logout</button>
         </aside>
       )}

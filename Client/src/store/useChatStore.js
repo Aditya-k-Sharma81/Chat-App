@@ -62,7 +62,23 @@ export const useChatStore = create((set, get) => ({
   },
 
   createGroup: async (groupData) => {
-    // ... (existing code)
+    try {
+      const res = await fetch(`${BASE_URL}/api/groups/create`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(groupData),
+        credentials: "include",
+      });
+      if (res.ok) {
+        const newGroup = await res.json();
+        set({ groups: [newGroup, ...get().groups] });
+        return { success: true, group: newGroup };
+      }
+      return { success: false };
+    } catch (error) {
+      console.log("Error in createGroup:", error);
+      return { success: false };
+    }
   },
 
   updateGroup: async (groupId, updateData) => {
@@ -84,6 +100,48 @@ export const useChatStore = create((set, get) => ({
       return { success: false };
     } catch (error) {
       console.log("Error in updateGroup:", error);
+      return { success: false };
+    }
+  },
+
+  deleteGroup: async (groupId) => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/groups/${groupId}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok) {
+        set({
+          groups: get().groups.filter((g) => g._id !== groupId),
+          selectedGroup: null,
+          messages: [],
+        });
+        return { success: true };
+      }
+      return { success: false };
+    } catch (error) {
+      console.log("Error in deleteGroup:", error);
+      return { success: false };
+    }
+  },
+
+  leaveGroup: async (groupId) => {
+    try {
+      const res = await fetch(`${BASE_URL}/api/groups/${groupId}/leave`, {
+        method: "POST",
+        credentials: "include",
+      });
+      if (res.ok) {
+        set({
+          groups: get().groups.filter((g) => g._id !== groupId),
+          selectedGroup: null,
+          messages: [],
+        });
+        return { success: true };
+      }
+      return { success: false };
+    } catch (error) {
+      console.log("Error in leaveGroup:", error);
       return { success: false };
     }
   },

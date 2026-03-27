@@ -7,6 +7,7 @@ import { useAuthStore } from "../store/useAuthStore";
 import { formatChatHeaderDate } from "../utils/dateUtils";
 import CameraModal from "./CameraModal";
 import CreateGroupModal from "./CreateGroupModal";
+import EditGroupModal from "./EditGroupModal";
 
 
 export function Avatar({ contact, size = 40 }) {
@@ -81,7 +82,7 @@ export default function ChatPage() {
 
   const [search, setSearch] = useState("");
   const [input, setInput] = useState("");
-  const [showInfo, setShowInfo] = useState(true);
+  const [showInfo, setShowInfo] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [showEditProfile, setShowEditProfile] = useState(false);
   const [pendingMedia, setPendingMedia] = useState([]);
@@ -93,11 +94,16 @@ export default function ChatPage() {
 
   
   const [showCreateGroup, setShowCreateGroup] = useState(false);
+  const [showEditGroup, setShowEditGroup] = useState(false);
   
   const menuRef = useRef(null);
   const fileRef = useRef(null);
   const messagesEndRef = useRef(null);
   const recordingInterval = useRef(null);
+
+  useEffect(() => {
+    setShowInfo(false);
+  }, [selectedUser, selectedGroup]);
 
   useEffect(() => {
     getUsers();
@@ -331,7 +337,7 @@ export default function ChatPage() {
   }
 
   return (
-    <div className={`chat-root ${selectedUser ? "user-selected" : ""}`}>
+    <div className={`chat-root ${(selectedUser || selectedGroup) ? "user-selected" : ""}`}>
       {/* Sidebar */}
       <aside className="chat-sidebar">
         <div className="sidebar-head">
@@ -461,12 +467,17 @@ export default function ChatPage() {
                     <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
                   </svg>
                 </button>
-                <Avatar contact={selectedUser || selectedGroup} size={38} />
-                <div>
-                  <p className="chat-header-name">{(selectedUser || selectedGroup).name || (selectedUser || selectedGroup).groupName}</p>
-                  <p className={`chat-header-status ${selectedUser && getStatus(selectedUser._id) === "Online" ? "status-online" : ""}`}>
-                    {selectedUser ? getStatus(selectedUser._id) : `${selectedGroup.members.length} members`}
-                  </p>
+                <div 
+                  className="flex items-center gap-3 cursor-pointer" 
+                  onClick={() => setShowInfo(!showInfo)}
+                >
+                  <Avatar contact={selectedUser || selectedGroup} size={38} />
+                  <div>
+                    <p className="chat-header-name">{(selectedUser || selectedGroup).name || (selectedUser || selectedGroup).groupName}</p>
+                    <p className={`chat-header-status ${selectedUser && getStatus(selectedUser._id) === "Online" ? "status-online" : ""}`}>
+                      {selectedUser ? getStatus(selectedUser._id) : `${selectedGroup.members.length} members`}
+                    </p>
+                  </div>
                 </div>
               </div>
               <button className="icon-btn" onClick={() => setShowInfo(!showInfo)}>
@@ -588,13 +599,44 @@ export default function ChatPage() {
       </main>
 
       {/* Right Panel */}
-      {showInfo && (selectedUser || selectedGroup) && (
-        <aside className="chat-panel">
-          <div className="panel-avatar">
-             <Avatar contact={selectedUser || selectedGroup} size={80} />
+      {(selectedUser || selectedGroup) && (
+        <aside className={`chat-panel ${showInfo ? "active" : ""}`}>
+          <div className="p-4 self-start lg:hidden">
+             <button onClick={() => setShowInfo(false)} className="text-[#aebac1] hover:text-white">
+                <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round">
+                  <line x1="19" y1="12" x2="5" y2="12" /><polyline points="12 19 5 12 12 5" />
+                </svg>
+             </button>
           </div>
-          <p className="panel-name">{(selectedUser || selectedGroup).name || (selectedUser || selectedGroup).groupName}</p>
-          <p className="panel-bio">{(selectedUser || selectedGroup).bio || "Group Chat"}</p>
+          
+          {/* Enhanced Profile Header in Panel */}
+          <div className="flex flex-col items-center w-full pb-6 pt-2">
+            <div className="relative group mb-6">
+              <div className="p-1 rounded-full bg-gradient-to-tr from-[#00a884] to-[#05e7b2] shadow-2xl">
+                <Avatar contact={selectedUser || selectedGroup} size={180} />
+              </div>
+            </div>
+            <h2 className="text-xl font-bold text-[#e9edef] text-center px-4">
+              {(selectedUser || selectedGroup).name || (selectedUser || selectedGroup).groupName}
+            </h2>
+            <p className="text-sm text-[#8696a0] mt-1 font-medium italic">
+              {selectedGroup ? "Group Chat" : (selectedUser.status || "Hey there! I am using NexChat")}
+            </p>
+          </div>
+
+          <div className="panel-divider" />
+          
+          {selectedGroup && selectedGroup.admin._id === authUser._id && (
+             <button 
+              onClick={() => setShowEditGroup(true)}
+              className="mt-2 w-[90%] py-2.5 bg-[#00a884]/10 hover:bg-[#00a884]/20 text-[#00a884] rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all border border-[#00a884]/20 mb-4"
+             >
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"/>
+                </svg>
+                Edit Group Info
+             </button>
+          )}
           
           {selectedGroup && (
             <div className="mt-6 w-full">
@@ -630,6 +672,10 @@ export default function ChatPage() {
 
       {showCreateGroup && (
         <CreateGroupModal onClose={() => setShowCreateGroup(false)} />
+      )}
+
+      {showEditGroup && selectedGroup && (
+        <EditGroupModal group={selectedGroup} onClose={() => setShowEditGroup(false)} />
       )}
 
       {previewImage && <ImageModal />}

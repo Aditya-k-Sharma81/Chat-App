@@ -111,6 +111,7 @@ const sendMessage = async (req, res) => {
     });
 
     await newMessage.save();
+    await newMessage.populate("senderId", "name pic email");
 
     // Update last message in Group or Conversation (if implemented)
     if (groupId) {

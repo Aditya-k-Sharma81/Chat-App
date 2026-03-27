@@ -76,4 +76,40 @@ const getGroupMessages = async (req, res) => {
     }
 };
 
-module.exports = { createGroup, getGroups, getGroupMessages };
+const updateGroup = async (req, res) => {
+  try {
+    const { id: groupId } = req.params;
+    const { groupName, groupIcon } = req.body;
+    const userId = req.user._id;
+
+    const group = await Group.findById(groupId);
+    if (!group) {
+      return res.status(404).json({ error: "Group not found" });
+    }
+
+    if (group.admin.toString() !== userId.toString()) {
+      return res.status(403).json({ error: "Only admin can update group details" });
+    }
+
+    let iconUrl = group.groupIcon;
+    if (groupIcon && groupIcon.startsWith("data:image")) {
+      const uploadResponse = await cloudinary.uploader.upload(groupIcon);
+      iconUrl = uploadResponse.secure_url;
+    }
+
+    const updatedGroup = await Group.findByIdAndUpdate(
+      groupId,
+      { groupName: groupName || group.groupName, groupIcon: iconUrl },
+      { new: true }
+    )
+      .populate("members", "-password")
+      .populate("admin", "-password");
+
+    res.status(200).json(updatedGroup);
+  } catch (error) {
+    console.error("Error in updateGroup: ", error.message);
+    res.status(500).json({ error: "Internal server error" });
+  }
+};
+
+module.exports = { createGroup, getGroups, getGroupMessages, updateGroup };

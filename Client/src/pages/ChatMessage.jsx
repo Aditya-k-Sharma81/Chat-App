@@ -221,7 +221,7 @@ export default function ChatMessage({ message, selectedUser, isGroup }) {
       {!fromMe && <Avatar contact={sender || selectedUser} size={28} />}
       <div className={`msg-bubble ${fromMe ? "bubble-me" : "bubble-them"} ${((message.audio || message.image || (message.images && message.images.length > 0) || message.video || (message.videos && message.videos.length > 0)) && !message.text) ? "bubble-img" : ""}`}>
         {isGroup && sender && (
-          <span className="text-[10px] font-bold text-[#7c6cfb] block mb-1">
+          <span className="text-xs font-bold text-[#7c6cfb] block mb-1">
             {fromMe ? "You" : sender.name}
           </span>
         )}

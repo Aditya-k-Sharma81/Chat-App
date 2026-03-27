@@ -62,21 +62,28 @@ export const useChatStore = create((set, get) => ({
   },
 
   createGroup: async (groupData) => {
+    // ... (existing code)
+  },
+
+  updateGroup: async (groupId, updateData) => {
     try {
-      const res = await fetch(`${BASE_URL}/api/groups/create`, {
-        method: "POST",
+      const res = await fetch(`${BASE_URL}/api/groups/${groupId}/update`, {
+        method: "PUT",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(groupData),
+        body: JSON.stringify(updateData),
         credentials: "include",
       });
       if (res.ok) {
-        const newGroup = await res.json();
-        set({ groups: [newGroup, ...get().groups] });
-        return { success: true, group: newGroup };
+        const updatedGroup = await res.json();
+        set({
+          groups: get().groups.map((g) => (g._id === groupId ? updatedGroup : g)),
+          selectedGroup: updatedGroup,
+        });
+        return { success: true, group: updatedGroup };
       }
       return { success: false };
     } catch (error) {
-      console.log("Error in createGroup:", error);
+      console.log("Error in updateGroup:", error);
       return { success: false };
     }
   },

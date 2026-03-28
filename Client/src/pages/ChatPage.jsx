@@ -482,6 +482,11 @@ export default function ChatPage() {
                   {g.members.length} members
                 </span>
               </div>
+              {g.unreadCount > 0 && (
+                <div className="unread-badge">
+                  {g.unreadCount}
+                </div>
+              )}
             </button>
           ))}
 

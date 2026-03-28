@@ -59,7 +59,18 @@ const getGroups = async (req, res) => {
       .populate("lastMessage")
       .sort({ updatedAt: -1 });
 
-    res.status(200).json(groups);
+    const groupsWithUnreadCount = await Promise.all(
+      groups.map(async (group) => {
+        const unreadCount = await Message.countDocuments({
+          groupId: group._id,
+          seenBy: { $ne: loggedInUserId },
+          senderId: { $ne: loggedInUserId },
+        });
+        return { ...group.toObject(), unreadCount };
+      })
+    );
+
+    res.status(200).json(groupsWithUnreadCount);
   } catch (error) {
     console.error("Error in getGroups: ", error.message);
     res.status(500).json({ error: "Internal server error" });
@@ -78,6 +89,13 @@ const getGroupMessages = async (req, res) => {
         }
 
         const messages = await Message.find({ groupId }).populate("senderId", "name pic email");
+
+        // Mark messages as seen
+        await Message.updateMany(
+            { groupId, seenBy: { $ne: userId }, senderId: { $ne: userId } },
+            { $push: { seenBy: userId } }
+        );
+
         res.status(200).json(messages);
     } catch (error) {
         console.error("Error in getGroupMessages: ", error.message);

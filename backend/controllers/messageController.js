@@ -108,6 +108,7 @@ const sendMessage = async (req, res) => {
       video: videoUrl,
       videos: videoUrls,
       audio: audioUrl,
+      seenBy: groupId ? [senderId] : [],
     });
 
     await newMessage.save();

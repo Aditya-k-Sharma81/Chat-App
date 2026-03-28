@@ -242,7 +242,13 @@ export const useChatStore = create((set, get) => ({
       } else {
         // Handle unread counts for users or groups
         if (newMessage.groupId) {
-            // Update group last message or unread count if implemented
+            set({
+              groups: groups.map(g => 
+                g._id === newMessage.groupId 
+                  ? { ...g, unreadCount: (g.unreadCount || 0) + 1 } 
+                  : g
+              )
+            });
         } else {
             set({
               users: users.map(u => 
@@ -300,5 +306,12 @@ export const useChatStore = create((set, get) => ({
 
   setSelectedGroup: (selectedGroup) => {
     set({ selectedGroup, selectedUser: null });
+    if (selectedGroup) {
+      set({
+        groups: get().groups.map(g => 
+          g._id === selectedGroup._id ? { ...g, unreadCount: 0 } : g
+        )
+      });
+    }
   },
 }));

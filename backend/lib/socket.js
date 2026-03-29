@@ -5,9 +5,29 @@ const express = require("express");
 const app = express();
 const server = http.createServer(app);
 
+const allowedOrigins = [
+    'https://chat-app-umber-seven-73.vercel.app',
+    'https://chat-app-git-main-adityasharmaas813-5253s-projects.vercel.app',
+    'https://chat-h2gesa1wu-adityasharmaas813-5253s-projects.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000'
+];
+
 const io = new Server(server, {
   cors: {
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
+    origin: function (origin, callback) {
+      if (!origin) return callback(null, true);
+      const isAllowed = allowedOrigins.some(allowed =>
+        allowed instanceof RegExp ? allowed.test(origin) : allowed === origin
+      );
+      if (isAllowed) {
+        callback(null, true);
+      } else {
+        callback(null, false);
+      }
+    },
+    methods: ["GET", "POST"],
+    credentials: true,
   },
 });
 

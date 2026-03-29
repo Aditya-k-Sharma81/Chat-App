@@ -21,11 +21,38 @@ app.use(requestLogger);
 app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
+const allowedOrigins = [
+    'https://chat-app-umber-seven-73.vercel.app',
+    'https://chat-app-git-main-adityasharmaas813-5253s-projects.vercel.app',
+    'https://chat-h2gesa1wu-adityasharmaas813-5253s-projects.vercel.app',
+    'http://localhost:5173',
+    'http://localhost:3000'
+];
+
 app.use(cors({
-    origin: ["http://localhost:5173", "http://127.0.0.1:5173"],
-    credentials: true,
-    methods: ["GET", "POST", "PUT", "DELETE"],
-    allowedHeaders: ["Content-Type", "Authorization"],
+    origin: function (origin, callback) {
+        // Allow requests with no origin (like mobile apps or curl requests)
+        if (!origin) return callback(null, true);
+
+        const isAllowed = allowedOrigins.some(allowed => {
+            if (allowed instanceof RegExp) {
+                return allowed.test(origin);
+            }
+            return allowed === origin;
+        });
+
+        if (isAllowed) {
+            callback(null, true);
+        } else {
+            console.warn('CORS blocked origin:', origin);
+            // Return false instead of an Error to allow the response to proceed 
+            // with headers (though origin will be blocked by browser)
+            callback(null, false);
+        }
+    },
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'X-Requested-With'],
+    credentials: true
 }));
 
 // Routes

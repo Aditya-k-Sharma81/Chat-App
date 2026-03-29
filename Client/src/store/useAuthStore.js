@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { io } from "socket.io-client";
 
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = "https://chat-app-galg.onrender.com";
 
 export const useAuthStore = create((set, get) => ({
   authUser: null,

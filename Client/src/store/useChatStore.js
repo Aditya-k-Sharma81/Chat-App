@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { useAuthStore } from "./useAuthStore";
 
-const BASE_URL = "http://localhost:5000";
+const BASE_URL = "https://chat-app-galg.onrender.com";
 
 export const useChatStore = create((set, get) => ({
   messages: [],
@@ -170,7 +170,7 @@ export const useChatStore = create((set, get) => ({
     try {
       const id = selectedGroup ? selectedGroup._id : selectedUser._id;
       const body = selectedGroup ? { ...messageData, groupId: id } : messageData;
-      
+
       const res = await fetch(`${BASE_URL}/api/messages/send/${selectedGroup ? id : id}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -187,7 +187,7 @@ export const useChatStore = create((set, get) => ({
       set({ isSendingMessage: false });
     }
   },
-  
+
   markAsSeen: async (userId) => {
     try {
       await fetch(`${BASE_URL}/api/messages/read/${userId}`, {
@@ -227,36 +227,36 @@ export const useChatStore = create((set, get) => ({
 
     socket.on("newMessage", (newMessage) => {
       const { selectedUser, selectedGroup, messages, users } = get();
-      
-      const isMessageForSelectedChat = 
+
+      const isMessageForSelectedChat =
         (selectedUser && newMessage.senderId === selectedUser._id && !newMessage.groupId) ||
         (selectedGroup && newMessage.groupId === selectedGroup._id);
-      
+
       if (isMessageForSelectedChat) {
         set({
           messages: [...messages, newMessage],
         });
         if (!newMessage.groupId && newMessage.senderId) {
-            get().markAsSeen(newMessage.senderId);
+          get().markAsSeen(newMessage.senderId);
         }
       } else {
         // Handle unread counts for users or groups
         if (newMessage.groupId) {
-            set({
-              groups: groups.map(g => 
-                g._id === newMessage.groupId 
-                  ? { ...g, unreadCount: (g.unreadCount || 0) + 1 } 
-                  : g
-              )
-            });
+          set({
+            groups: groups.map(g =>
+              g._id === newMessage.groupId
+                ? { ...g, unreadCount: (g.unreadCount || 0) + 1 }
+                : g
+            )
+          });
         } else {
-            set({
-              users: users.map(u => 
-                u._id === newMessage.senderId 
-                  ? { ...u, unreadCount: (u.unreadCount || 0) + 1 } 
-                  : u
-              )
-            });
+          set({
+            users: users.map(u =>
+              u._id === newMessage.senderId
+                ? { ...u, unreadCount: (u.unreadCount || 0) + 1 }
+                : u
+            )
+          });
         }
       }
     });
@@ -282,7 +282,7 @@ export const useChatStore = create((set, get) => ({
   unsubscribeFromMessages: () => {
     const socket = useAuthStore.getState().socket;
     if (!socket) return;
-    
+
     const { groups } = get();
     groups.forEach(group => {
       socket.emit("leaveGroup", group._id);
@@ -297,7 +297,7 @@ export const useChatStore = create((set, get) => ({
     set({ selectedUser, selectedGroup: null });
     if (selectedUser) {
       set({
-        users: get().users.map(u => 
+        users: get().users.map(u =>
           u._id === selectedUser._id ? { ...u, unreadCount: 0 } : u
         )
       });
@@ -308,7 +308,7 @@ export const useChatStore = create((set, get) => ({
     set({ selectedGroup, selectedUser: null });
     if (selectedGroup) {
       set({
-        groups: get().groups.map(g => 
+        groups: get().groups.map(g =>
           g._id === selectedGroup._id ? { ...g, unreadCount: 0 } : g
         )
       });

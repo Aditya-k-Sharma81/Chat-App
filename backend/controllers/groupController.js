@@ -9,7 +9,7 @@ const createGroup = async (req, res) => {
     const admin = req.user._id;
 
     if (!groupName || !members || members.length < 1) {
-      return res.status(400).json({ error: "Please fill all the fields" });
+      return res.status(200).json({ success: false, message: "Please fill all the fields" });
     }
 
     // Add admin to members if not already present
@@ -43,10 +43,10 @@ const createGroup = async (req, res) => {
       .populate("members", "-password")
       .populate("admin", "-password");
 
-    res.status(201).json(fullGroup);
+    res.status(201).json({ success: true, data: fullGroup });
   } catch (error) {
-    console.error("Error in createGroup: ", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error: ", error.message);
+    res.status(200).json({ success: false, message: error.message || "Internal server error" });
   }
 };
 
@@ -70,10 +70,10 @@ const getGroups = async (req, res) => {
       })
     );
 
-    res.status(200).json(groupsWithUnreadCount);
+    res.status(200).json({ success: true, data: groupsWithUnreadCount });
   } catch (error) {
     console.error("Error in getGroups: ", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(200).json({ success: false, message: error.message || "Internal server error" });
   }
 };
 
@@ -85,7 +85,7 @@ const getGroupMessages = async (req, res) => {
         // Check if user is member of group
         const group = await Group.findById(groupId);
         if (!group || !group.members.includes(userId)) {
-            return res.status(403).json({ error: "Access denied" });
+            return res.status(200).json({ success: false, message: "Access denied" });
         }
 
         const messages = await Message.find({ groupId }).populate("senderId", "name pic email");
@@ -96,10 +96,10 @@ const getGroupMessages = async (req, res) => {
             { $push: { seenBy: userId } }
         );
 
-        res.status(200).json(messages);
+        res.status(200).json({ success: true, data: messages });
     } catch (error) {
         console.error("Error in getGroupMessages: ", error.message);
-        res.status(500).json({ error: "Internal server error" });
+        res.status(200).json({ success: false, message: error.message || "Internal server error" });
     }
 };
 
@@ -111,11 +111,11 @@ const updateGroup = async (req, res) => {
 
     const group = await Group.findById(groupId);
     if (!group) {
-      return res.status(404).json({ error: "Group not found" });
+      return res.status(200).json({ success: false, message: "Group not found" });
     }
 
     if (group.admin.toString() !== userId.toString()) {
-      return res.status(403).json({ error: "Only admin can update group details" });
+      return res.status(200).json({ success: false, message: "Only admin can update group details" });
     }
 
     let iconUrl = group.groupIcon;
@@ -145,10 +145,10 @@ const updateGroup = async (req, res) => {
         io.to(groupId).emit("newMessage", systemMessage);
     }
 
-    res.status(200).json(updatedGroup);
+    res.status(200).json({ success: true, data: updatedGroup });
   } catch (error) {
     console.error("Error in updateGroup: ", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(200).json({ success: false, message: error.message || "Internal server error" });
   }
 };
 
@@ -159,11 +159,11 @@ const deleteGroup = async (req, res) => {
 
     const group = await Group.findById(groupId);
     if (!group) {
-      return res.status(404).json({ error: "Group not found" });
+      return res.status(200).json({ success: false, message: "Group not found" });
     }
 
     if (group.admin.toString() !== userId.toString()) {
-      return res.status(403).json({ error: "Only admin can delete the group" });
+      return res.status(200).json({ success: false, message: "Only admin can delete the group" });
     }
 
     // Delete all messages in the group
@@ -172,10 +172,10 @@ const deleteGroup = async (req, res) => {
     // Delete the group
     await Group.findByIdAndDelete(groupId);
 
-    res.status(200).json({ message: "Group deleted successfully" });
+    res.status(200).json({ success: true, message: "Group deleted successfully" });
   } catch (error) {
     console.error("Error in deleteGroup: ", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(200).json({ success: false, message: error.message || "Internal server error" });
   }
 };
 
@@ -186,7 +186,7 @@ const leaveGroup = async (req, res) => {
 
     const group = await Group.findById(groupId);
     if (!group) {
-      return res.status(404).json({ error: "Group not found" });
+      return res.status(200).json({ success: false, message: "Group not found" });
     }
 
     // Remove user from members
@@ -223,10 +223,10 @@ const leaveGroup = async (req, res) => {
       .populate("members", "-password")
       .populate("admin", "-password");
 
-    res.status(200).json(fullGroup);
+    res.status(200).json({ success: true, data: fullGroup });
   } catch (error) {
     console.error("Error in leaveGroup: ", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(200).json({ success: false, message: error.message || "Internal server error" });
   }
 };
 

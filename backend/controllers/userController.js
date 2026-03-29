@@ -39,6 +39,7 @@ const signUp = async (req, res) => {
 
         if (user) {
             res.status(201).json({
+                success: true,
                 _id: user._id,
                 name: user.name,
                 email: user.email,
@@ -69,6 +70,7 @@ const login = async (req, res) => {
             });
 
             res.json({
+                success: true,
                 _id: user._id,
                 name: user.name,
                 email: user.email,
@@ -111,6 +113,7 @@ const updateProfile = async (req, res) => {
             });
 
             res.json({
+                success: true,
                 _id: updatedUser._id,
                 name: updatedUser.name,
                 email: updatedUser.email,
@@ -138,6 +141,7 @@ const getMe = async (req, res) => {
 
         if (user) {
             res.json({
+                success: true,
                 _id: user._id,
                 name: user.name,
                 email: user.email,
@@ -157,7 +161,7 @@ const logout = (req, res) => {
         httpOnly: true,
         expires: new Date(0),
     });
-    res.status(200).json({ message: 'Logged out successfully' });
+    res.status(200).json({ success: true, message: 'Logged out successfully' });
 };
 
 const allUsers = async (req, res) => {
@@ -172,7 +176,7 @@ const allUsers = async (req, res) => {
             : {};
 
         const users = await User.find(keyword).find({ _id: { $ne: req.user._id } });
-        res.send(users);
+        res.status(200).json({ success: true, data: users });
     } catch (error) {
         res.status(200).json({ success: false, message: error.message });
     }

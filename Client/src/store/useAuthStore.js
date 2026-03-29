@@ -17,7 +17,7 @@ export const useAuthStore = create((set, get) => ({
         credentials: "include",
       });
       const data = await res.json();
-      if (res.ok && data.success !== false) {
+      if (res.ok && data.success) {
         set({ authUser: data });
         get().connectSocket();
       } else {
@@ -41,7 +41,7 @@ export const useAuthStore = create((set, get) => ({
         credentials: "include",
       });
       const resData = await res.json();
-      if (resData.success !== false) {
+      if (res.ok && resData.success) {
         set({ authUser: resData });
         get().connectSocket();
       } else {
@@ -64,7 +64,7 @@ export const useAuthStore = create((set, get) => ({
         credentials: "include",
       });
       const resData = await res.json();
-      if (resData.success !== false) {
+      if (res.ok && resData.success) {
         return true;
       } else {
         throw new Error(resData.message);
@@ -78,14 +78,25 @@ export const useAuthStore = create((set, get) => ({
 
   logout: async () => {
     try {
-      await fetch(`${BASE_URL}/api/user/logout`, {
+      const res = await fetch(`${BASE_URL}/api/user/logout`, {
         method: "POST",
         credentials: "include",
       });
-      set({ authUser: null });
-      get().disconnectSocket();
+      const resData = await res.json();
+      if (res.ok && resData.success) {
+        set({ authUser: null });
+        get().disconnectSocket();
+      } else {
+        console.error("Logout failed:", resData?.message);
+        // Fallback for UI
+        set({ authUser: null });
+        get().disconnectSocket();
+      }
     } catch (error) {
       console.log("Error in logout:", error);
+      // Fallback for UI
+      set({ authUser: null });
+      get().disconnectSocket();
     }
   },
 
@@ -98,7 +109,7 @@ export const useAuthStore = create((set, get) => ({
         credentials: "include",
       });
       const resData = await res.json();
-      if (resData.success !== false) {
+      if (res.ok && resData.success) {
         set({ authUser: resData });
         return resData;
       } else {

@@ -18,10 +18,10 @@ const getUsersForSidebar = async (req, res) => {
       })
     );
 
-    res.status(200).json(usersWithUnreadCount);
+    res.status(200).json({ success: true, data: usersWithUnreadCount });
   } catch (error) {
-    console.error("Error in getUsersForSidebar: ", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    console.error("Error: ", error.message);
+    res.status(200).json({ success: false, message: error.message || "Internal server error" });
   }
 };
 
@@ -49,10 +49,10 @@ const getMessages = async (req, res) => {
       io.to(senderSocketId).emit("messagesRead", { readerId: myId });
     }
 
-    res.status(200).json(messages);
+    res.status(200).json({ success: true, data: messages });
   } catch (error) {
     console.error("Error in getMessages: ", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(200).json({ success: false, message: error.message || "Internal server error" });
   }
 };
 
@@ -63,7 +63,7 @@ const sendMessage = async (req, res) => {
     const senderId = req.user._id;
 
     if (!receiverId && !groupId) {
-      return res.status(400).json({ error: "Receiver ID or Group ID is required" });
+      return res.status(200).json({ success: false, message: "Receiver ID or Group ID is required" });
     }
 
     let imageUrl;
@@ -132,10 +132,10 @@ const sendMessage = async (req, res) => {
       }
     }
 
-    res.status(201).json(newMessage);
+    res.status(201).json({ success: true, data: newMessage });
   } catch (error) {
     console.error("Error in sendMessage: ", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(200).json({ success: false, message: error.message || "Internal server error" });
   }
 };
 
@@ -156,10 +156,10 @@ const markMessagesAsRead = async (req, res) => {
       io.to(senderSocketId).emit("messagesRead", { readerId: receiverId });
     }
 
-    res.status(200).json({ message: "Messages marked as read" });
+    res.status(200).json({ success: true, message: "Messages marked as read" });
   } catch (error) {
     console.error("Error in markMessagesAsRead: ", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(200).json({ success: false, message: error.message || "Internal server error" });
   }
 };
 
@@ -170,11 +170,11 @@ const deleteMessage = async (req, res) => {
 
     const message = await Message.findById(messageId);
     if (!message) {
-      return res.status(404).json({ error: "Message not found" });
+      return res.status(200).json({ success: false, message: "Message not found" });
     }
 
     if (message.senderId.toString() !== userId.toString()) {
-      return res.status(403).json({ error: "You can only delete your own messages" });
+      return res.status(200).json({ success: false, message: "You can only delete your own messages" });
     }
 
     await Message.findByIdAndDelete(messageId);
@@ -186,10 +186,10 @@ const deleteMessage = async (req, res) => {
       io.to(receiverSocketId).emit("messageDeleted", messageId);
     }
 
-    res.status(200).json({ message: "Message deleted successfully" });
+    res.status(200).json({ success: true, message: "Message deleted successfully" });
   } catch (error) {
     console.error("Error in deleteMessage: ", error.message);
-    res.status(500).json({ error: "Internal server error" });
+    res.status(200).json({ success: false, message: error.message || "Internal server error" });
   }
 };
 

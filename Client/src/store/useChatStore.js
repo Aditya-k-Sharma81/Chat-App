@@ -18,13 +18,17 @@ export const useChatStore = create((set, get) => ({
   setPreviewImage: (image) => set({ previewImage: image }),
 
   getUsers: async () => {
+    const authUser = useAuthStore.getState().authUser;
+    if (!authUser) return;
+
     set({ isUsersLoading: true });
     try {
       const res = await fetch(`${BASE_URL}/api/messages/users`, {
         credentials: "include",
       });
-      if (res.ok) {
-        const data = await res.json();
+      const resData = await res.json();
+      if (res.ok && resData.success) {
+        const data = resData.data;
         const formattedUsers = data.map(u => ({
           _id: u._id, // Keep original ID
           id: u._id, // Add id for UI compatibility
@@ -45,14 +49,17 @@ export const useChatStore = create((set, get) => ({
   },
 
   getGroups: async () => {
+    const authUser = useAuthStore.getState().authUser;
+    if (!authUser) return;
+
     set({ isGroupsLoading: true });
     try {
       const res = await fetch(`${BASE_URL}/api/groups`, {
         credentials: "include",
       });
-      if (res.ok) {
-        const data = await res.json();
-        set({ groups: data });
+      const resData = await res.json();
+      if (res.ok && resData.success) {
+        set({ groups: resData.data });
       }
     } catch (error) {
       console.log("Error in getGroups:", error);
@@ -69,8 +76,9 @@ export const useChatStore = create((set, get) => ({
         body: JSON.stringify(groupData),
         credentials: "include",
       });
-      if (res.ok) {
-        const newGroup = await res.json();
+      const resData = await res.json();
+      if (res.ok && resData.success) {
+        const newGroup = resData.data;
         set({ groups: [newGroup, ...get().groups] });
         return { success: true, group: newGroup };
       }
@@ -89,8 +97,9 @@ export const useChatStore = create((set, get) => ({
         body: JSON.stringify(updateData),
         credentials: "include",
       });
-      if (res.ok) {
-        const updatedGroup = await res.json();
+      const resData = await res.json();
+      if (res.ok && resData.success) {
+        const updatedGroup = resData.data;
         set({
           groups: get().groups.map((g) => (g._id === groupId ? updatedGroup : g)),
           selectedGroup: updatedGroup,
@@ -110,7 +119,8 @@ export const useChatStore = create((set, get) => ({
         method: "DELETE",
         credentials: "include",
       });
-      if (res.ok) {
+      const resData = await res.json();
+      if (res.ok && resData.success) {
         set({
           groups: get().groups.filter((g) => g._id !== groupId),
           selectedGroup: null,
@@ -131,7 +141,8 @@ export const useChatStore = create((set, get) => ({
         method: "POST",
         credentials: "include",
       });
-      if (res.ok) {
+      const resData = await res.json();
+      if (res.ok && resData.success) {
         set({
           groups: get().groups.filter((g) => g._id !== groupId),
           selectedGroup: null,
@@ -153,9 +164,9 @@ export const useChatStore = create((set, get) => ({
       const res = await fetch(url, {
         credentials: "include",
       });
-      if (res.ok) {
-        const data = await res.json();
-        set({ messages: data });
+      const resData = await res.json();
+      if (res.ok && resData.success) {
+        set({ messages: resData.data });
       }
     } catch (error) {
       console.log("Error in getMessages:", error);
@@ -177,9 +188,9 @@ export const useChatStore = create((set, get) => ({
         body: JSON.stringify(body),
         credentials: "include",
       });
-      if (res.ok) {
-        const data = await res.json();
-        set({ messages: [...messages, data] });
+      const resData = await res.json();
+      if (res.ok && resData.success) {
+        set({ messages: [...messages, resData.data] });
       }
     } catch (error) {
       console.log("Error in sendMessage:", error);
@@ -205,7 +216,8 @@ export const useChatStore = create((set, get) => ({
         method: "DELETE",
         credentials: "include",
       });
-      if (res.ok) {
+      const resData = await res.json();
+      if (res.ok && resData.success) {
         set({
           messages: get().messages.filter((m) => m._id !== messageId),
         });

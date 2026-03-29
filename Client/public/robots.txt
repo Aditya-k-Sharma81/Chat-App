@@ -1,0 +1,3 @@
+User-agent: *
+Allow: /
+Sitemap: https://chat-app-umber-seven-73.vercel.app/sitemap.xml

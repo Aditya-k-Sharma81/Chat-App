@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { useAuthStore } from "./useAuthStore";
 
-const BASE_URL = "https://chat-app-galg.onrender.com";
+const BASE_URL = "https://chat-app-0o6n.onrender.com";
 
 export const useChatStore = create((set, get) => ({
   messages: [],

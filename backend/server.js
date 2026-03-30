@@ -22,16 +22,14 @@ app.use(express.json({ limit: '50mb' }));
 app.use(express.urlencoded({ limit: '50mb', extended: true }));
 app.use(cookieParser());
 const allowedOrigins = [
+    /^https:\/\/chat-app-.*\.vercel\.app$/, // Match any Vercel deployment for this project
     'https://chat-app-umber-seven-73.vercel.app',
-    'https://chat-app-git-main-adityasharmaas813-5253s-projects.vercel.app',
-    'https://chat-h2gesa1wu-adityasharmaas813-5253s-projects.vercel.app',
     'http://localhost:5173',
     'http://localhost:3000'
 ];
 
 app.use(cors({
     origin: function (origin, callback) {
-        // Allow requests with no origin (like mobile apps or curl requests)
         if (!origin) return callback(null, true);
 
         const isAllowed = allowedOrigins.some(allowed => {
@@ -45,8 +43,6 @@ app.use(cors({
             callback(null, true);
         } else {
             console.warn('CORS blocked origin:', origin);
-            // Return false instead of an Error to allow the response to proceed 
-            // with headers (though origin will be blocked by browser)
             callback(null, false);
         }
     },
@@ -61,7 +57,12 @@ app.use('/api/messages', require('./routes/messageRoutes'));
 app.use('/api/groups', require('./routes/groupRoutes'));
 
 app.get('/', (req, res) => {
-    res.send('API is running...');
+    const dbStatus = require('mongoose').connection.readyState === 1 ? "Connected" : "Disconnected";
+    res.json({
+        message: 'API is running...',
+        database: dbStatus,
+        version: "1.1.0"
+    });
 });
 
 app.use(notFound);

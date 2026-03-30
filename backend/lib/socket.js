@@ -6,9 +6,8 @@ const app = express();
 const server = http.createServer(app);
 
 const allowedOrigins = [
+    /^https:\/\/chat-app-.*\.vercel\.app$/,
     'https://chat-app-umber-seven-73.vercel.app',
-    'https://chat-app-git-main-adityasharmaas813-5253s-projects.vercel.app',
-    'https://chat-h2gesa1wu-adityasharmaas813-5253s-projects.vercel.app',
     'http://localhost:5173',
     'http://localhost:3000'
 ];

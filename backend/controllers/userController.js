@@ -64,8 +64,8 @@ const login = async (req, res) => {
             const token = generateToken(user._id);
             res.cookie('token', token, {
                 httpOnly: true,
-                secure: false, // Set to false for local development (no HTTPS)
-                sameSite: 'lax',
+                secure: true, 
+                sameSite: 'none',
                 maxAge: 30 * 24 * 60 * 60 * 1000,
             });
 
@@ -107,8 +107,8 @@ const updateProfile = async (req, res) => {
             const token = generateToken(updatedUser._id);
             res.cookie('token', token, {
                 httpOnly: true,
-                secure: false, // Set to false for local development (no HTTPS)
-                sameSite: 'lax',
+                secure: true, 
+                sameSite: 'none',
                 maxAge: 30 * 24 * 60 * 60 * 1000,
             });
 

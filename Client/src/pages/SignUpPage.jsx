@@ -245,20 +245,6 @@ export default function SignUpPage({ onSwitch }) {
           </div>
         </div>
       </div>
-
-      {/* Trust Footer */}
-      <footer className="trust-footer">
-        <div className="footer-links">
-          <a href="#" onClick={(e) => e.preventDefault()}>Privacy Policy</a>
-          <span className="dot">•</span>
-          <a href="#" onClick={(e) => e.preventDefault()}>Terms of Service</a>
-          <span className="dot">•</span>
-          <a href="#" onClick={(e) => e.preventDefault()}>About NexChat</a>
-          <span className="dot">•</span>
-          <a href="#" onClick={(e) => e.preventDefault()}>Contact Support</a>
-        </div>
-        <p className="footer-copy">© 2024 NexChat. Professional Real-time Messaging Platform.</p>
-      </footer>
     </div>
   );
 }

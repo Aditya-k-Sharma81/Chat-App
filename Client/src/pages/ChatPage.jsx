@@ -151,7 +151,7 @@ export default function ChatPage() {
 
   const handleUpdateProfile = async (updatedData) => {
     try {
-      const response = await fetch("http://localhost:5000/api/user/update", {
+      const response = await fetch("https://chat-app-0o6n.onrender.com/api/user/update", {
         method: "PUT",
         headers: {
           "Content-Type": "application/json",

@@ -1,7 +1,7 @@
 import { create } from "zustand";
 import { useAuthStore } from "./useAuthStore";
 
-const BASE_URL = "https://chat-app-0o6n.onrender.com";
+const BASE_URL = window.location.hostname === "localhost" ? "http://localhost:5000" : "https://chat-app-0o6n.onrender.com";
 
 export const useChatStore = create((set, get) => ({
   messages: [],
@@ -237,21 +237,44 @@ export const useChatStore = create((set, get) => ({
       socket.emit("joinGroup", group._id);
     });
 
-    socket.on("newMessage", (newMessage) => {
-      const { selectedUser, selectedGroup, messages, users } = get();
+    socket.on("newMessage", async (newMessage) => {
+      const { selectedUser, selectedGroup, messages, users, groups } = get();
+
+      // Normalize senderId to string for comparison
+      const senderId = newMessage.senderId?._id || newMessage.senderId;
+      const senderName = newMessage.senderId?.name || "Someone";
 
       const isMessageForSelectedChat =
-        (selectedUser && newMessage.senderId === selectedUser._id && !newMessage.groupId) ||
+        (selectedUser && senderId === selectedUser._id && !newMessage.groupId) ||
         (selectedGroup && newMessage.groupId === selectedGroup._id);
 
       if (isMessageForSelectedChat) {
         set({
           messages: [...messages, newMessage],
         });
-        if (!newMessage.groupId && newMessage.senderId) {
-          get().markAsSeen(newMessage.senderId);
+        if (!newMessage.groupId && senderId) {
+          get().markAsSeen(senderId);
         }
       } else {
+        // Play notification sound
+        const audio = new Audio("https://res.cloudinary.com/dwyon783q/video/upload/v1711718055/notification_msl6dz.mp3");
+        audio.play().catch(err => console.log("Sound play error:", err));
+
+        // Show Toast Notification
+        const Swal = (await import("sweetalert2")).default;
+        Swal.fire({
+          title: `New message from ${senderName}`,
+          text: newMessage.text || "Sent an attachment",
+          icon: "info",
+          toast: true,
+          position: "top-end",
+          showConfirmButton: false,
+          timer: 3000,
+          timerProgressBar: true,
+          background: "#1e1e2d",
+          color: "#fff",
+        });
+
         // Handle unread counts for users or groups
         if (newMessage.groupId) {
           set({
@@ -264,7 +287,7 @@ export const useChatStore = create((set, get) => ({
         } else {
           set({
             users: users.map(u =>
-              u._id === newMessage.senderId
+              u._id === senderId
                 ? { ...u, unreadCount: (u.unreadCount || 0) + 1 }
                 : u
             )

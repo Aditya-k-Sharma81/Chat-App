@@ -78,7 +78,7 @@ export default function ChatPage() {
     setPreviewImage,
   } = useChatStore();
 
-  const { authUser, onlineUsers, logout, updateProfile } = useAuthStore();
+  const { authUser, socket, onlineUsers, logout, updateProfile } = useAuthStore();
 
   const [search, setSearch] = useState("");
   const [input, setInput] = useState("");
@@ -113,7 +113,7 @@ export default function ChatPage() {
   useEffect(() => {
     subscribeToMessages();
     return () => unsubscribeFromMessages();
-  }, [subscribeToMessages, unsubscribeFromMessages, groups]); // Added groups to deps to rejoin rooms on new group
+  }, [subscribeToMessages, unsubscribeFromMessages, groups, socket]); // Added socket to deps
 
   useEffect(() => {
     if (selectedUser) {

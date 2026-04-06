@@ -80,6 +80,11 @@ export const useChatStore = create((set, get) => ({
       if (res.ok && resData.success) {
         const newGroup = resData.data;
         set({ groups: [newGroup, ...get().groups] });
+        
+        // Join the socket room for the new group
+        const socket = useAuthStore.getState().socket;
+        if (socket) socket.emit("joinGroup", newGroup._id);
+
         return { success: true, group: newGroup };
       }
       return { success: false };
@@ -345,6 +350,34 @@ export const useChatStore = create((set, get) => ({
         });
       }
     });
+
+    socket.on("newGroup", (newGroup) => {
+      const { groups } = get();
+      if (!groups.find((g) => g._id === newGroup._id)) {
+        set({ groups: [newGroup, ...groups] });
+        socket.emit("joinGroup", newGroup._id);
+      }
+    });
+
+    socket.on("groupUpdated", (updatedGroup) => {
+      const { groups, selectedGroup } = get();
+      set({
+        groups: groups.map((g) => (g._id === updatedGroup._id ? updatedGroup : g)),
+      });
+      if (selectedGroup && selectedGroup._id === updatedGroup._id) {
+        set({ selectedGroup: updatedGroup });
+      }
+    });
+
+    socket.on("groupDeleted", (groupId) => {
+      const { groups, selectedGroup } = get();
+      set({
+        groups: groups.filter((g) => g._id !== groupId),
+      });
+      if (selectedGroup && selectedGroup._id === groupId) {
+        set({ selectedGroup: null, messages: [] });
+      }
+    });
   },
 
   unsubscribeFromMessages: () => {
@@ -360,6 +393,9 @@ export const useChatStore = create((set, get) => ({
     socket.off("messageDeleted");
     socket.off("messagesRead");
     socket.off("userUpdated");
+    socket.off("newGroup");
+    socket.off("groupUpdated");
+    socket.off("groupDeleted");
   },
 
   setSelectedUser: (selectedUser) => {

@@ -43,6 +43,20 @@ const createGroup = async (req, res) => {
       .populate("members", "-password")
       .populate("admin", "-password");
 
+    // Socket logic to notify other members about the new group in real-time
+    const { io, getReceiverSocketId } = require("../lib/socket");
+    fullGroup.members.forEach((member) => {
+      const memberId = member._id.toString();
+      
+      // Skip the creator (admin) as they already add the group to their state locally
+      if (memberId === admin.toString()) return;
+
+      const receiverSocketId = getReceiverSocketId(memberId);
+      if (receiverSocketId) {
+        io.to(receiverSocketId).emit("newGroup", fullGroup);
+      }
+    });
+
     res.status(201).json({ success: true, data: fullGroup });
   } catch (error) {
     console.error("Error: ", error.message);
@@ -145,6 +159,10 @@ const updateGroup = async (req, res) => {
         io.to(groupId).emit("newMessage", systemMessage);
     }
 
+    // Notify all members that the group was updated
+    const { io } = require("../lib/socket");
+    io.to(groupId).emit("groupUpdated", updatedGroup);
+
     res.status(200).json({ success: true, data: updatedGroup });
   } catch (error) {
     console.error("Error in updateGroup: ", error.message);
@@ -171,6 +189,10 @@ const deleteGroup = async (req, res) => {
 
     // Delete the group
     await Group.findByIdAndDelete(groupId);
+
+    // Notify all members that the group was deleted
+    const { io } = require("../lib/socket");
+    io.to(groupId).emit("groupDeleted", groupId);
 
     res.status(200).json({ success: true, message: "Group deleted successfully" });
   } catch (error) {

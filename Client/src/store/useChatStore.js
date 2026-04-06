@@ -312,6 +312,39 @@ export const useChatStore = create((set, get) => ({
         });
       }
     });
+
+    socket.on("userUpdated", (updatedUser) => {
+      const { users, selectedUser } = get();
+      
+      // Update users list
+      const updatedUsers = users.map((u) => {
+        if (u._id === updatedUser._id) {
+          return {
+            ...u,
+            name: updatedUser.name,
+            pic: updatedUser.pic,
+            bio: updatedUser.bio,
+            initials: updatedUser.name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
+          };
+        }
+        return u;
+      });
+
+      set({ users: updatedUsers });
+
+      // Update selectedUser if it's the one who was updated
+      if (selectedUser && selectedUser._id === updatedUser._id) {
+        set({
+          selectedUser: {
+            ...selectedUser,
+            name: updatedUser.name,
+            pic: updatedUser.pic,
+            bio: updatedUser.bio,
+            initials: updatedUser.name.split(" ").map(w => w[0]).join("").toUpperCase().slice(0, 2)
+          }
+        });
+      }
+    });
   },
 
   unsubscribeFromMessages: () => {
@@ -326,6 +359,7 @@ export const useChatStore = create((set, get) => ({
     socket.off("newMessage");
     socket.off("messageDeleted");
     socket.off("messagesRead");
+    socket.off("userUpdated");
   },
 
   setSelectedUser: (selectedUser) => {

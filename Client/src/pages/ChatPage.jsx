@@ -151,19 +151,9 @@ export default function ChatPage() {
 
   const handleUpdateProfile = async (updatedData) => {
     try {
-      const response = await fetch("https://chat-app-0o6n.onrender.com/api/user/update", {
-        method: "PUT",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        credentials: "include",
-        body: JSON.stringify(updatedData),
-      });
+      const data = await updateProfile(updatedData);
 
-      const data = await response.json();
-
-      if (response.ok) {
-        updateProfile(data);
+      if (data) {
         Swal.fire({
           icon: "success",
           title: "Profile Updated!",
@@ -174,8 +164,6 @@ export default function ChatPage() {
           background: "#1e1e2d",
           color: "#fff",
         });
-      } else {
-        throw new Error(data.message || "Failed to update profile");
       }
     } catch (error) {
       Swal.fire({
@@ -685,7 +673,7 @@ export default function ChatPage() {
               {(selectedUser || selectedGroup).name || (selectedUser || selectedGroup).groupName}
             </h2>
             <p className="text-sm text-[#8696a0] mt-1 font-medium italic">
-              {selectedGroup ? "Group Chat" : (selectedUser.status || "Hey there! I am using NexChat")}
+              {selectedGroup ? "Group Chat" : (selectedUser.bio || "Hey there! I am using NexChat")}
             </p>
           </div>
 

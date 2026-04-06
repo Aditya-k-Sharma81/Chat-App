@@ -1,6 +1,7 @@
 const User = require('../models/userModel');
 const jwt = require('jsonwebtoken');
 const cloudinary = require('../config/cloudinaryConfig');
+const { io } = require('../lib/socket');
 
 const generateToken = (id) => {
     return jwt.sign({ id }, process.env.JWT_SECRET, {
@@ -117,6 +118,14 @@ const updateProfile = async (req, res) => {
                 _id: updatedUser._id,
                 name: updatedUser.name,
                 email: updatedUser.email,
+                pic: updatedUser.pic,
+                bio: updatedUser.bio,
+            });
+
+            // Emit update to all clients
+            io.emit('userUpdated', {
+                _id: updatedUser._id,
+                name: updatedUser.name,
                 pic: updatedUser.pic,
                 bio: updatedUser.bio,
             });

@@ -153,6 +153,11 @@ export const useChatStore = create((set, get) => ({
           selectedGroup: null,
           messages: [],
         });
+
+        // Notify socket
+        const socket = useAuthStore.getState().socket;
+        if (socket) socket.emit("leaveGroup", groupId);
+
         return { success: true };
       }
       return { success: false };

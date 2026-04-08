@@ -237,13 +237,16 @@ const leaveGroup = async (req, res) => {
     });
     await systemMessage.save();
     
-    // Emit via socket
-    const { io } = require("../lib/socket");
-    io.to(groupId).emit("newMessage", systemMessage);
-
     const fullGroup = await Group.findById(groupId)
       .populate("members", "-password")
       .populate("admin", "-password");
+
+    // Emit via socket
+    const { io } = require("../lib/socket");
+    io.to(groupId).emit("newMessage", systemMessage);
+    if (fullGroup) {
+      io.to(groupId).emit("groupUpdated", fullGroup);
+    }
 
     res.status(200).json({ success: true, data: fullGroup });
   } catch (error) {
